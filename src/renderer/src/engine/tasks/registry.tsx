@@ -1,0 +1,181 @@
+import type { Difficulty, ScenarioBase, TaskCategory, TaskId, TaskResult } from '@shared/types'
+import type { TaskViewProps } from './taskView'
+
+import { bigNumbersLogic } from './big-numbers/generator'
+import { BigNumbersView } from './big-numbers/View'
+import { coordinateSystemLogic } from './coordinate-system/generator'
+import { CoordinateSystemView } from './coordinate-system/View'
+import { cubeFoldingLogic } from './cube-folding/generator'
+import { CubeFoldingView } from './cube-folding/View'
+import { matchingFigureLogic } from './matching-figure/generator'
+import { MatchingFigureView } from './matching-figure/View'
+import { memorizeInstrumentsLogic } from './memorize-instruments/generator'
+import { MemorizeInstrumentsView } from './memorize-instruments/View'
+import { memorizePictogramsLogic } from './memorize-pictograms/generator'
+import { MemorizePictogramsView } from './memorize-pictograms/View'
+import { planningLogic } from './planning/generator'
+import { PlanningView } from './planning/View'
+import { ruleApplicationLogic } from './rule-application/generator'
+import { RuleApplicationView } from './rule-application/View'
+import { spotSideLogic } from './spot-the-side/generator'
+import { SpotTheSideView } from './spot-the-side/View'
+
+export interface TaskEntry {
+  id: TaskId
+  name: string
+  category: TaskCategory
+  shortDesc: string
+  instructions: string[]
+  /** Labels for extra result metrics shown on the summary screen. */
+  extraLabels?: Record<string, string>
+  generate: (seed: string, difficulty: Difficulty) => ScenarioBase
+  View: React.ComponentType<TaskViewProps<never>>
+}
+
+/* Views are registered through a narrowing cast: each View's scenario type
+ * is produced exclusively by its own generator right next to it in the
+ * task page, so the pairing is safe by construction. */
+function entry<S extends ScenarioBase>(
+  e: Omit<TaskEntry, 'generate' | 'View'> & {
+    generate: (seed: string, difficulty: Difficulty) => S
+    View: React.ComponentType<TaskViewProps<S>>
+  }
+): TaskEntry {
+  return e as unknown as TaskEntry
+}
+
+export const TASKS: TaskEntry[] = [
+  entry({
+    id: 'matching-figure',
+    name: 'Matching Figures',
+    category: 'spatial',
+    shortDesc: 'Rapidly judge which candidate figure matches the reference.',
+    instructions: [
+      'A reference figure appears at the top with several candidates below.',
+      'Exactly one candidate matches the reference. At higher difficulty, rotated copies count as matches — read the on-screen rule for each item.',
+      'Answer as fast as you can without guessing: accuracy and speed are both scored. Use number keys 1–6 or click.'
+    ],
+    generate: matchingFigureLogic.generate,
+    View: MatchingFigureView
+  }),
+  entry({
+    id: 'spot-the-side',
+    name: 'Spot the Side',
+    category: 'spatial',
+    shortDesc: "Left/right judgement from another person's perspective.",
+    instructions: [
+      'A figure appears facing toward you or away from you, sometimes rotated.',
+      'One shape is next to each hand. Decide in which of the FIGURE’S OWN hands the asked shape is — not yours.',
+      'When the figure faces you, its right hand is on your left. Use the ← and → arrow keys or click.'
+    ],
+    generate: spotSideLogic.generate,
+    View: SpotTheSideView
+  }),
+  entry({
+    id: 'cube-folding',
+    name: 'Cube Folding',
+    category: 'spatial',
+    shortDesc: 'Pick the folded cube that matches an unfolded net.',
+    instructions: [
+      'An unfolded cube net is shown with six symbols; below are several folded cubes showing three faces each.',
+      'Exactly one cube can be folded from the net. Watch out for mirror-image cubes and cubes showing faces that would be on opposite sides.',
+      'Use number keys or click. Take your time — but the clock is running.'
+    ],
+    generate: cubeFoldingLogic.generate,
+    View: CubeFoldingView
+  }),
+  entry({
+    id: 'coordinate-system',
+    name: 'Coordinate System',
+    category: 'spatial',
+    shortDesc: 'Estimate distances, headings and turns on a grid.',
+    instructions: [
+      'Two points, A and B, are plotted on a grid. North is up.',
+      'Three question types rotate: the distance from A to B in grid units, the compass heading from A to B, and the turn (left/right + degrees) from a current course onto the course to B.',
+      'Pick the best answer from the four options.'
+    ],
+    generate: coordinateSystemLogic.generate,
+    View: CoordinateSystemView
+  }),
+  entry({
+    id: 'planning',
+    name: 'Landing Sequence',
+    category: 'planning',
+    shortDesc: 'Order aircraft for landing under a set of priority rules.',
+    instructions: [
+      'Several aircraft approach one runway. Each has a speed, a distance, and possibly a LOW FUEL warning.',
+      'Apply the rules shown on the left, in priority order, to determine the correct landing sequence. Arrival time = distance ÷ speed.',
+      'Click aircraft in landing order, then confirm. An unfinished sequence when the clock runs out counts as a miss.'
+    ],
+    extraLabels: { ruleViolations: 'Rule violations' },
+    generate: planningLogic.generate,
+    View: PlanningView
+  }),
+  entry({
+    id: 'rule-application',
+    name: 'Symbol Rules',
+    category: 'memory',
+    shortDesc: 'Apply a symbol→digit table that changes mid-run.',
+    instructions: [
+      'A table maps abstract symbols to digits. For each symbol shown, press its digit.',
+      'The table CHANGES part-way through the run — a banner warns you. Adapt quickly; your post-change accuracy is measured separately.',
+      'Answer with the digit keys or click.'
+    ],
+    extraLabels: { postChangeAccuracy: 'Accuracy after rule change' },
+    generate: ruleApplicationLogic.generate,
+    View: RuleApplicationView
+  }),
+  entry({
+    id: 'memorize-instruments',
+    name: 'Instrument Recall',
+    category: 'memory',
+    shortDesc: 'Memorize gauge readings shown for a few seconds.',
+    instructions: [
+      'A panel of instrument dials appears for a few seconds. Memorize every reading.',
+      'The panel is then hidden and you are asked what specific gauges read.',
+      'Distractor options are neighbouring values on the same scale, so read the needles precisely.'
+    ],
+    generate: memorizeInstrumentsLogic.generate,
+    View: MemorizeInstrumentsView
+  }),
+  entry({
+    id: 'memorize-pictograms',
+    name: 'Pictogram Memory',
+    category: 'memory',
+    shortDesc: 'Remember abstract shapes through arithmetic interference.',
+    instructions: [
+      'One or more abstract pictograms appear — memorize them.',
+      'You then solve simple arithmetic (this interference is deliberate), and finally must recognise each studied pictogram among very similar distractors.',
+      'Both memory accuracy and arithmetic accuracy are reported.'
+    ],
+    extraLabels: { mathAccuracy: 'Math accuracy' },
+    generate: memorizePictogramsLogic.generate,
+    View: MemorizePictogramsView
+  }),
+  entry({
+    id: 'big-numbers',
+    name: 'Number Recall',
+    category: 'memory',
+    shortDesc: 'Hear a large number once; pick it from close options.',
+    instructions: [
+      'A sentence containing a large number is spoken once (or shown briefly when audio is off).',
+      'Afterwards, choose the exact number from four very similar options — digit swaps are the usual trap.',
+      'Numbers grow to 7 digits at higher difficulty.'
+    ],
+    generate: bigNumbersLogic.generate,
+    View: BigNumbersView
+  })
+]
+
+export const TASKS_BY_ID = new Map<TaskId, TaskEntry>(TASKS.map((t) => [t.id, t]))
+
+export const CATEGORY_LABELS: Record<TaskCategory, string> = {
+  attention: 'Attention & Multitasking',
+  memory: 'Memory',
+  spatial: 'Spatial & Orientation',
+  planning: 'Planning',
+  english: 'English',
+  simulation: 'Simulations'
+}
+
+export type { TaskResult }

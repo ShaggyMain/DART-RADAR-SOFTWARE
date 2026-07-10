@@ -1,0 +1,83 @@
+# VectorMind
+
+An **independent desktop practice tool** for the cognitive abilities screened in
+air-traffic-controller aptitude selection (FEAST-style skills, e.g. the PAŻP/PANSA
+process): attention, memory, spatial orientation, planning and multitasking.
+
+> **Disclaimer** — VectorMind is not affiliated with, endorsed by, or connected to
+> EUROCONTROL (FEAST), PANSA/PAŻP, SkyTest, or any test vendor. Every exercise is an
+> original, procedurally generated design that trains underlying abilities; nothing
+> reproduces real test items, layouts or content. Practice scores are training
+> feedback only and do not predict official results. Timings are configurable
+> estimates from public candidate reports — no official values exist.
+
+## Tech stack
+
+- **Electron + TypeScript + React**, built with **electron-vite**
+- State: **Zustand** · Settings persistence: **electron-store**
+- Security: `contextIsolation: true`, `nodeIntegration: false`, typed
+  `contextBridge` IPC only
+- Tests: **Vitest** (every generator/scorer is pure and unit-tested)
+
+## Development
+
+```bash
+npm install
+npm run dev        # HMR development window
+npm run test       # unit tests
+npm run typecheck  # strict TS across main/preload/renderer
+npm run build      # production build into out/
+```
+
+> In restricted networks the Electron binary download from GitHub may fail during
+> `npm install`. Re-run it with a mirror:
+> `ELECTRON_MIRROR="https://registry.npmmirror.com/-/binary/electron/" node node_modules/electron/install.js`
+
+## Architecture
+
+```
+src/
+  main/       Electron main: window, IPC handlers, settings storage
+  preload/    typed contextBridge API (window.vectormind)
+  shared/     pure, dependency-free core: seeded RNG (mulberry32),
+              task contracts, scoring, glyphs, geometry, number-words
+  renderer/
+    src/app/        shell, routing, styles
+    src/pages/      Dashboard, TaskPage, Settings
+    src/components/ shared UI (options, countdowns, SVG primitives)
+    src/engine/
+      core/         item runner, countdowns, speech helper
+      tasks/<id>/   generator.ts (pure) + generator.test.ts + View.tsx
+```
+
+**Determinism:** every scenario comes from `generate(seed, difficulty)` — a pure
+function over a seeded PRNG. The same seed always reproduces the identical session;
+`Math.random` is never used in task logic.
+
+## Task modules
+
+| Module | Trains | Status |
+| --- | --- | --- |
+| Matching Figures | perceptual comparison speed | ✅ M2 |
+| Spot the Side | left/right perspective-taking | ✅ M2 |
+| Cube Folding | 3D visualisation (real fold mechanics) | ✅ M2 |
+| Coordinate System | distance/heading/turn estimation | ✅ M2 |
+| Landing Sequence | rule-based planning | ✅ M2 |
+| Symbol Rules | learning & applying changing rules | ✅ M2 |
+| Instrument Recall | visual short-term memory | ✅ M2 |
+| Pictogram Memory | memory under interference | ✅ M2 |
+| Number Recall | auditory number memory (TTS) | ✅ M2 |
+| Vigilance, Divided/Multi Attention, Conflict Scan | sustained & divided attention | ⏳ M4 |
+| Radar (DART-style), Multipass, Radar Control, Strips | real-time multitasking work-samples | ⏳ M5 |
+| English Listening | listening comprehension | ⏳ M6 |
+
+## Roadmap
+
+- **M1 — Foundation** ✅ scaffold, secure IPC, settings persistence, seeded RNG + tests
+- **M2 — Static generators** ✅ nine FEAST-I-style tasks with pure generate/score + tests + views
+- **M3 — Session engine** ⏳ results storage (better-sqlite3), statistics dashboard, trends
+- **M4 — Real-time engine** ⏳ Canvas loop (fixed timestep), attention tasks
+- **M5 — Simulations** ⏳ radar/multipass/corridor/strips with audio sub-tasks
+- **M6 — English listening** ⏳ original passages + question bank
+- **M7 — Adaptive difficulty & exam simulation** ⏳ chained modules, stanine-style practice summary
+- **M8 — Packaging** ⏳ electron-builder Windows installer, profiles, accessibility, QA
