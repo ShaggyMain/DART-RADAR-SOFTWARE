@@ -9,6 +9,14 @@ import { dividedAttentionLogic } from './divided-attention/generator'
 import { DividedAttentionView } from './divided-attention/View'
 import { multiAttentionLogic } from './multi-attention/generator'
 import { MultiAttentionView } from './multi-attention/View'
+import { multipassLogic } from './multipass/generator'
+import { MultipassView } from './multipass/View'
+import { radarControlLogic } from './radar-control/generator'
+import { RadarControlView } from './radar-control/View'
+import { radarDartLogic } from './radar-dart/generator'
+import { RadarDartView } from './radar-dart/View'
+import { stripManagementLogic } from './strip-management/generator'
+import { StripManagementView } from './strip-management/View'
 import { vigilanceLogic } from './vigilance/generator'
 import { VigilanceView } from './vigilance/View'
 import { coordinateSystemLogic } from './coordinate-system/generator'
@@ -219,6 +227,80 @@ export const TASKS: TaskEntry[] = [
     extraLabels: { mathAccuracy: 'Math accuracy' },
     generate: memorizePictogramsLogic.generate,
     View: MemorizePictogramsView
+  }),
+  entry({
+    id: 'radar-dart',
+    name: 'Radar — Conflict Avoidance',
+    category: 'simulation',
+    shortDesc: 'Live radar: keep auto-routed traffic separated, hand off at exit fixes.',
+    instructions: [
+      'Aircraft cross your sector on their own routes (dashed line when selected) and normally reach their exit fix by themselves — but their routes CROSS, and same-level crossings lose separation (5 NM / 1000 ft).',
+      'Click an aircraft, then vector it (turn buttons) or change its level (±1000 ft) to prevent conflicts. Press "Resume route" so it still leaves via its exit fix — an aircraft that drifts out of the sector anywhere else counts as a failed handoff.',
+      'Red = separation lost now, amber = predicted within 60 s. Score: correct handoffs, conflicts, and time in conflict.'
+    ],
+    extraLabels: {
+      conflicts: 'Separation losses',
+      timeInConflictSec: 'Time in conflict (s)',
+      unfinishedFlights: 'Still airborne at end'
+    },
+    generate: radarDartLogic.generate,
+    View: RadarDartView
+  }),
+  entry({
+    id: 'multipass',
+    name: 'Multipass — Approach Control',
+    category: 'simulation',
+    shortDesc: 'Route arrivals to the right airport, work strips and audio at once.',
+    instructions: [
+      'Every arrival must be CLEARED to its destination airport (A or B, shown on its label and strip). Uncleared aircraft fly straight on and are lost when they leave the sector.',
+      'Keep 4 NM lateral separation (all traffic is at one level) — use the 30° vector buttons, then "Resume".',
+      'When a flight nears its airport its strip calls REPORT — click that strip in time. When a callsign is spoken, press M (or MATCH) ONLY if that callsign is on your scope.'
+    ],
+    extraLabels: {
+      conflicts: 'Separation losses',
+      timeInConflictSec: 'Time in conflict (s)',
+      unfinishedFlights: 'Lost arrivals',
+      reportAccuracy: 'Strip reports acknowledged',
+      audioAccuracy: 'Audio callsign accuracy',
+      falseAlarms: 'False MATCH presses'
+    },
+    generate: multipassLogic.generate,
+    View: MultipassView
+  }),
+  entry({
+    id: 'radar-control',
+    name: 'Radar Control — Gates',
+    category: 'simulation',
+    shortDesc: 'Vector every flight to its assigned exit gate, efficiently.',
+    instructions: [
+      'There is no autopilot here: aircraft hold whatever heading they have. Each is ASSIGNED an exit gate (on its label) — vector it there with turn commands and keep 5 NM / 1000 ft separation using level changes.',
+      'Efficiency counts: the closer your flown path is to the straight line, the better your routing score.',
+      'Radio checks name a callsign — press R (or ACK) ONLY when that callsign is one of yours.'
+    ],
+    extraLabels: {
+      conflicts: 'Separation losses',
+      timeInConflictSec: 'Time in conflict (s)',
+      unfinishedFlights: 'Still airborne at end',
+      routeEfficiency: 'Route efficiency',
+      audioAccuracy: 'Radio check accuracy',
+      falseAlarms: 'False ACK presses'
+    },
+    generate: radarControlLogic.generate,
+    View: RadarControlView
+  }),
+  entry({
+    id: 'strip-management',
+    name: 'Strip Management',
+    category: 'simulation',
+    shortDesc: 'Detect conflicts from flight-strip data, not the radar picture.',
+    instructions: [
+      'Flight strips arrive at control-point columns, each showing a flight level and a live ETA countdown.',
+      'Two strips CONFLICT when they are at the same point, at the same level, and their ETAs are less than 3 minutes apart. Click one strip of a conflicting pair to flag it — the earlier the better.',
+      'Watch for LEVEL UPDATES (highlighted): they can create new conflicts. False flags are penalised.'
+    ],
+    extraLabels: { falseFlags: 'False flags' },
+    generate: stripManagementLogic.generate,
+    View: StripManagementView
   }),
   entry({
     id: 'big-numbers',

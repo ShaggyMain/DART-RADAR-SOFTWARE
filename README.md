@@ -76,7 +76,10 @@ function over a seeded PRNG. The same seed always reproduces the identical sessi
 | Divided Attention | multi-panel event monitoring | ✅ M4 |
 | Multi Attention | triple-stream multitasking (+ audio) | ✅ M4 |
 | Conflict Scan | head-on conflict detection at a glance | ✅ M4 |
-| Radar (DART-style), Multipass, Radar Control, Strips | real-time multitasking work-samples | ⏳ M5 |
+| Radar — Conflict Avoidance (DART-style) | live separation + route keeping | ✅ M5 |
+| Multipass — Approach Control | routing + strips + audio callsigns | ✅ M5 |
+| Radar Control — Gates | manual vectoring + efficiency + radio checks | ✅ M5 |
+| Strip Management | conflict detection from strip data | ✅ M5 |
 | English Listening | listening comprehension | ⏳ M6 |
 
 ## Roadmap
@@ -87,7 +90,9 @@ function over a seeded PRNG. The same seed always reproduces the identical sessi
   personal percentiles, statistics dashboard (trends, history, overview)
 - **M4 — Real-time engine** ✅ fixed-timestep loop (frame-rate independent), Canvas
   rendering, four attention tasks with pre-simulated deterministic ground truth
-- **M5 — Simulations** ⏳ radar/multipass/corridor/strips with audio sub-tasks
+- **M5 — Simulations** ✅ four FEAST-II-style work-samples on the shared aircraft
+  kinematics core (deterministic sims, pure scorers over event logs, NATO-phonetic
+  TTS audio sub-tasks with visual fallback)
 - **M6 — English listening** ⏳ original passages + question bank
 - **M7 — Adaptive difficulty & exam simulation** ⏳ chained modules, stanine-style practice summary
 - **M8 — Packaging** ⏳ electron-builder Windows installer, profiles, accessibility, QA

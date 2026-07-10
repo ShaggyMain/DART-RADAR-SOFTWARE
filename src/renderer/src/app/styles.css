@@ -548,3 +548,191 @@ input[type='text'] {
   font-size: 0.9rem;
   margin: 0 0 6px;
 }
+
+/* FEAST-II-style simulations */
+.sim-layout {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.sim-panel {
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sim-hud {
+  display: flex;
+  gap: 14px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  justify-content: space-between;
+}
+
+.sim-selected {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  min-height: 42px;
+  color: var(--text-dim);
+}
+
+.cmd-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.cmd-grid .btn {
+  padding: 9px 6px;
+  font-size: 0.9rem;
+}
+
+.radio-box {
+  background: var(--bg-panel);
+  border: 1px solid var(--warn);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 52px;
+}
+
+.traffic-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.strip {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.strip:hover {
+  border-color: var(--accent-dim);
+}
+
+.strip.selected {
+  border-color: var(--accent);
+}
+
+.strip.report {
+  border-color: var(--warn);
+  animation: strip-blink 0.8s infinite;
+}
+
+@keyframes strip-blink {
+  50% {
+    background: rgba(224, 179, 77, 0.18);
+  }
+}
+
+.strip .cs {
+  font-weight: 700;
+}
+
+.strip .meta {
+  color: var(--text-dim);
+}
+
+/* Strip Display Management */
+.strip-columns {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.strip-column {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 200px;
+}
+
+.strip-col-header {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  font-size: 0.8rem;
+  padding: 2px 4px 8px;
+}
+
+.flight-strip {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.flight-strip:hover {
+  border-color: var(--accent-dim);
+}
+
+.flight-strip.flagged {
+  border-color: var(--bad);
+  background: rgba(229, 96, 76, 0.12);
+}
+
+.flight-strip.updated {
+  border-color: var(--warn);
+  background: rgba(224, 179, 77, 0.15);
+}
+
+.flight-strip .cs {
+  font-weight: 700;
+}
+
+.flight-strip .fl {
+  color: var(--accent);
+}
+
+.flight-strip .eta {
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.strip-empty {
+  color: var(--text-dim);
+  text-align: center;
+  padding: 12px 0;
+}
