@@ -15,9 +15,13 @@ process): attention, memory, spatial orientation, planning and multitasking.
 
 - **Electron + TypeScript + React**, built with **electron-vite**
 - State: **Zustand** · Settings persistence: **electron-store**
+- Results history: **node:sqlite** (SQLite bundled with Electron's Node —
+  chosen over better-sqlite3 to avoid native-module ABI rebuilds between
+  dev, tests and packaging; same synchronous prepared-statement API)
 - Security: `contextIsolation: true`, `nodeIntegration: false`, typed
   `contextBridge` IPC only
-- Tests: **Vitest** (every generator/scorer is pure and unit-tested)
+- Tests: **Vitest** (every generator/scorer is pure and unit-tested; the
+  storage layer is Electron-free and tested against in-memory databases)
 
 ## Development
 
@@ -37,7 +41,8 @@ npm run build      # production build into out/
 
 ```
 src/
-  main/       Electron main: window, IPC handlers, settings storage
+  main/       Electron main: window, IPC handlers, settings + results storage
+              (storage/db.ts: sessions/items/profiles/skill_state schema)
   preload/    typed contextBridge API (window.vectormind)
   shared/     pure, dependency-free core: seeded RNG (mulberry32),
               task contracts, scoring, glyphs, geometry, number-words
@@ -75,7 +80,8 @@ function over a seeded PRNG. The same seed always reproduces the identical sessi
 
 - **M1 — Foundation** ✅ scaffold, secure IPC, settings persistence, seeded RNG + tests
 - **M2 — Static generators** ✅ nine FEAST-I-style tasks with pure generate/score + tests + views
-- **M3 — Session engine** ⏳ results storage (better-sqlite3), statistics dashboard, trends
+- **M3 — Session engine** ✅ results storage (node:sqlite), session save pipeline with
+  personal percentiles, statistics dashboard (trends, history, overview)
 - **M4 — Real-time engine** ⏳ Canvas loop (fixed timestep), attention tasks
 - **M5 — Simulations** ⏳ radar/multipass/corridor/strips with audio sub-tasks
 - **M6 — English listening** ⏳ original passages + question bank

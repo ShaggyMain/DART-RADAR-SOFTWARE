@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, Route, Routes } from 'react-router-dom'
 import { Dashboard } from '@renderer/pages/Dashboard'
 import { SettingsPage } from '@renderer/pages/SettingsPage'
+import { StatsPage } from '@renderer/pages/StatsPage'
 import { TaskPage } from '@renderer/pages/TaskPage'
 import { useSettings } from '@renderer/state/settings'
 
@@ -21,6 +22,7 @@ export default function App(): React.JSX.Element {
         <NavLink to="/" end>
           Dashboard
         </NavLink>
+        <NavLink to="/stats">Statistics</NavLink>
         <NavLink to="/settings">Settings</NavLink>
         <div className="spacer" />
         {version && <div className="version">v{version}</div>}
@@ -29,6 +31,7 @@ export default function App(): React.JSX.Element {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/task/:taskId" element={<TaskPage />} />
+          <Route path="/stats" element={<StatsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Routes>
       </main>

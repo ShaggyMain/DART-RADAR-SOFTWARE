@@ -1,10 +1,17 @@
+import type { SaveOutcome } from '@shared/results'
 import type { TaskResult } from '@shared/types'
+
+export type SaveInfo =
+  | { state: 'unavailable' }
+  | { state: 'saving' }
+  | { state: 'saved'; outcome: SaveOutcome }
+  | { state: 'failed' }
 
 interface Props {
   result: TaskResult
   /** Human labels for extra metrics, e.g. { mathAccuracy: 'Math accuracy' }. */
   extraLabels?: Record<string, string>
-  /** Extra metrics formatted as percentages when true (default: heuristic). */
+  saveInfo?: SaveInfo
   onRetry: () => void
   onExit: () => void
 }
@@ -14,7 +21,33 @@ function formatExtra(key: string, value: number): string {
   return String(Math.round(value * 100) / 100)
 }
 
-export function ResultsSummary({ result, extraLabels, onRetry, onExit }: Props): React.JSX.Element {
+function saveLine(saveInfo: SaveInfo | undefined): string | null {
+  if (!saveInfo) return null
+  switch (saveInfo.state) {
+    case 'saving':
+      return 'Saving session…'
+    case 'failed':
+      return 'Could not save this session.'
+    case 'saved': {
+      const { attempts, percentile } = saveInfo.outcome
+      if (percentile === null) {
+        return `Run #${attempts} at this task & difficulty — baseline recorded.`
+      }
+      return `Run #${attempts} at this task & difficulty · better than ${Math.round(percentile)}% of your previous runs.`
+    }
+    default:
+      return null
+  }
+}
+
+export function ResultsSummary({
+  result,
+  extraLabels,
+  saveInfo,
+  onRetry,
+  onExit
+}: Props): React.JSX.Element {
+  const line = saveLine(saveInfo)
   return (
     <div className="session">
       <h1>Results</h1>
@@ -52,6 +85,7 @@ export function ResultsSummary({ result, extraLabels, onRetry, onExit }: Props):
           />
         ))}
       </div>
+      {line && <p className="save-line">{line}</p>}
       <div className="btn-row" style={{ justifyContent: 'center' }}>
         <button type="button" className="btn primary" onClick={onRetry}>
           Try again (new scenario)

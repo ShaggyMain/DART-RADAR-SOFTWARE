@@ -1,10 +1,20 @@
+import type {
+  OverviewStats,
+  SaveOutcome,
+  SessionQuery,
+  SessionRecord,
+  SessionSaveRequest
+} from './results'
 import type { AppSettings } from './settings'
 
 /** IPC channel names — the only channels the preload bridge exposes. */
 export const IPC = {
   settingsGet: 'settings:get',
   settingsSet: 'settings:set',
-  appInfo: 'app:info'
+  appInfo: 'app:info',
+  resultsSave: 'results:save',
+  resultsList: 'results:list',
+  resultsOverview: 'results:overview'
 } as const
 
 export interface AppInfo {
@@ -17,4 +27,7 @@ export interface VectorMindApi {
   getSettings(): Promise<AppSettings>
   setSettings(patch: Partial<AppSettings>): Promise<AppSettings>
   getAppInfo(): Promise<AppInfo>
+  saveSession(req: SessionSaveRequest): Promise<SaveOutcome>
+  listSessions(query?: SessionQuery): Promise<SessionRecord[]>
+  getOverview(): Promise<OverviewStats>
 }

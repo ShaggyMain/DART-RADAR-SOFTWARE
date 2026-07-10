@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import type { SaveOutcome } from '@shared/results'
 import type { Difficulty, TaskId, TaskResult } from '@shared/types'
-import { ResultsSummary } from '@renderer/components/ResultsSummary'
+import { ResultsSummary, type SaveInfo } from '@renderer/components/ResultsSummary'
 import { TaskIntro } from '@renderer/components/TaskIntro'
 import { TASKS_BY_ID } from '@renderer/engine/tasks/registry'
 import type { TaskViewProps } from '@renderer/engine/tasks/taskView'
@@ -18,11 +19,14 @@ export function TaskPage(): React.JSX.Element {
   const { taskId } = useParams<{ taskId: TaskId }>()
   const navigate = useNavigate()
   const defaultDifficulty = useSettings((s) => s.settings.defaultDifficulty)
+  const timingPreset = useSettings((s) => s.settings.timingPreset)
   const timingMultiplier = useTimingMultiplier()
 
   const [difficulty, setDifficulty] = useState<Difficulty>(defaultDifficulty)
   const [phase, setPhase] = useState<Phase>({ kind: 'intro' })
   const [runCounter, setRunCounter] = useState(0)
+  const [saveInfo, setSaveInfo] = useState<SaveInfo>({ state: 'unavailable' })
+  const startedAtRef = useRef(0)
 
   const entry = taskId ? TASKS_BY_ID.get(taskId) : undefined
 
@@ -45,7 +49,31 @@ export function TaskPage(): React.JSX.Element {
   const startRun = (): void => {
     const next = runCounter + 1
     setRunCounter(next)
+    startedAtRef.current = Date.now()
+    setSaveInfo({ state: 'unavailable' })
     setPhase({ kind: 'run', seed: freshSeed(entry.id, next) })
+  }
+
+  const finishRun = (seed: string, result: TaskResult): void => {
+    setPhase({ kind: 'done', result })
+    const bridge = window.vectormind
+    if (!bridge) return
+    setSaveInfo({ state: 'saving' })
+    bridge
+      .saveSession({
+        taskId: entry.id,
+        seed,
+        difficulty,
+        startedAt: startedAtRef.current,
+        durationMs: Date.now() - startedAtRef.current,
+        timingPreset,
+        result
+      })
+      .then((outcome: SaveOutcome) => setSaveInfo({ state: 'saved', outcome }))
+      .catch((err: unknown) => {
+        console.error('Failed to save session', err)
+        setSaveInfo({ state: 'failed' })
+      })
   }
 
   if (phase.kind === 'intro') {
@@ -62,12 +90,13 @@ export function TaskPage(): React.JSX.Element {
 
   if (phase.kind === 'run' && scenario) {
     const View = entry.View as React.ComponentType<TaskViewProps<typeof scenario>>
+    const seed = phase.seed
     return (
       <View
-        key={phase.seed}
+        key={seed}
         scenario={scenario}
         timingMultiplier={timingMultiplier}
-        onFinish={(result) => setPhase({ kind: 'done', result })}
+        onFinish={(result) => finishRun(seed, result)}
       />
     )
   }
@@ -77,6 +106,7 @@ export function TaskPage(): React.JSX.Element {
       <ResultsSummary
         result={phase.result}
         extraLabels={entry.extraLabels}
+        saveInfo={saveInfo}
         onRetry={startRun}
         onExit={() => navigate('/')}
       />
