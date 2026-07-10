@@ -72,7 +72,10 @@ function over a seeded PRNG. The same seed always reproduces the identical sessi
 | Instrument Recall | visual short-term memory | ✅ M2 |
 | Pictogram Memory | memory under interference | ✅ M2 |
 | Number Recall | auditory number memory (TTS) | ✅ M2 |
-| Vigilance, Divided/Multi Attention, Conflict Scan | sustained & divided attention | ⏳ M4 |
+| Vigilance | sustained signal detection | ✅ M4 |
+| Divided Attention | multi-panel event monitoring | ✅ M4 |
+| Multi Attention | triple-stream multitasking (+ audio) | ✅ M4 |
+| Conflict Scan | head-on conflict detection at a glance | ✅ M4 |
 | Radar (DART-style), Multipass, Radar Control, Strips | real-time multitasking work-samples | ⏳ M5 |
 | English Listening | listening comprehension | ⏳ M6 |
 
@@ -82,7 +85,8 @@ function over a seeded PRNG. The same seed always reproduces the identical sessi
 - **M2 — Static generators** ✅ nine FEAST-I-style tasks with pure generate/score + tests + views
 - **M3 — Session engine** ✅ results storage (node:sqlite), session save pipeline with
   personal percentiles, statistics dashboard (trends, history, overview)
-- **M4 — Real-time engine** ⏳ Canvas loop (fixed timestep), attention tasks
+- **M4 — Real-time engine** ✅ fixed-timestep loop (frame-rate independent), Canvas
+  rendering, four attention tasks with pre-simulated deterministic ground truth
 - **M5 — Simulations** ⏳ radar/multipass/corridor/strips with audio sub-tasks
 - **M6 — English listening** ⏳ original passages + question bank
 - **M7 — Adaptive difficulty & exam simulation** ⏳ chained modules, stanine-style practice summary

@@ -3,6 +3,14 @@ import type { TaskViewProps } from './taskView'
 
 import { bigNumbersLogic } from './big-numbers/generator'
 import { BigNumbersView } from './big-numbers/View'
+import { conflictScanLogic } from './conflict-scan/generator'
+import { ConflictScanView } from './conflict-scan/View'
+import { dividedAttentionLogic } from './divided-attention/generator'
+import { DividedAttentionView } from './divided-attention/View'
+import { multiAttentionLogic } from './multi-attention/generator'
+import { MultiAttentionView } from './multi-attention/View'
+import { vigilanceLogic } from './vigilance/generator'
+import { VigilanceView } from './vigilance/View'
 import { coordinateSystemLogic } from './coordinate-system/generator'
 import { CoordinateSystemView } from './coordinate-system/View'
 import { cubeFoldingLogic } from './cube-folding/generator'
@@ -45,6 +53,66 @@ function entry<S extends ScenarioBase>(
 }
 
 export const TASKS: TaskEntry[] = [
+  entry({
+    id: 'vigilance',
+    name: 'Vigilance',
+    category: 'attention',
+    shortDesc: 'Catch the marker’s irregular double steps over minutes.',
+    instructions: [
+      'A marker steps around a ring at a steady rhythm. Occasionally it makes an irregular DOUBLE step.',
+      'Press SPACE the instant you see a double step. Pressing at any other time counts as a false alarm.',
+      'This is a sustained task — it runs continuously for a few minutes. The timing preset widens the response window but never slows the rhythm.'
+    ],
+    extraLabels: { falseAlarms: 'False alarms' },
+    generate: vigilanceLogic.generate,
+    View: VigilanceView
+  }),
+  entry({
+    id: 'divided-attention',
+    name: 'Divided Attention',
+    category: 'attention',
+    shortDesc: 'Monitor several panels; react when dot and bar touch.',
+    instructions: [
+      'Each panel contains a moving dot and a sliding bar. When they touch in a panel, press that panel’s number key (or click the panel).',
+      'Touches can happen in any panel at any time — keep scanning all of them.',
+      'Hits, misses, wrong-panel presses and reaction times are all scored.'
+    ],
+    extraLabels: { falseAlarms: 'False alarms' },
+    generate: dividedAttentionLogic.generate,
+    View: DividedAttentionView
+  }),
+  entry({
+    id: 'multi-attention',
+    name: 'Multi Attention',
+    category: 'attention',
+    shortDesc: 'Shapes, arithmetic and sound cues — all at once.',
+    instructions: [
+      'Three streams run at the same time: two figures (press F when identical), an equation (press J if true, K if false), and sporadic beeps (press L when you hear one).',
+      'Every equation must be answered; figures only need a key when they MATCH.',
+      'At difficulty 1 the sound stream is off; from difficulty 2 all three run together.'
+    ],
+    extraLabels: {
+      shapeAccuracy: 'Figures accuracy',
+      mathAccuracy: 'Equations accuracy',
+      soundAccuracy: 'Sound accuracy',
+      falseAlarms: 'Sound false alarms'
+    },
+    generate: multiAttentionLogic.generate,
+    View: MultiAttentionView
+  }),
+  entry({
+    id: 'conflict-scan',
+    name: 'Conflict Scan',
+    category: 'attention',
+    shortDesc: 'Spot head-on collision courses in a brief glimpse.',
+    instructions: [
+      'A field of aircraft (triangles) appears for a few seconds. Decide whether any two point DIRECTLY AT EACH OTHER — a strict head-on course.',
+      'Aircraft merely being close, or one pointing at another that looks away, is NOT a conflict.',
+      'Answer with C (conflict) or N (no conflict). You may answer while the field is still visible.'
+    ],
+    generate: conflictScanLogic.generate,
+    View: ConflictScanView
+  }),
   entry({
     id: 'matching-figure',
     name: 'Matching Figures',
