@@ -3,7 +3,8 @@ import type {
   SaveOutcome,
   SessionQuery,
   SessionRecord,
-  SessionSaveRequest
+  SessionSaveRequest,
+  SkillStateRecord
 } from './results'
 import type { AppSettings } from './settings'
 
@@ -14,7 +15,8 @@ export const IPC = {
   appInfo: 'app:info',
   resultsSave: 'results:save',
   resultsList: 'results:list',
-  resultsOverview: 'results:overview'
+  resultsOverview: 'results:overview',
+  skillsList: 'skills:list'
 } as const
 
 export interface AppInfo {
@@ -30,4 +32,5 @@ export interface VectorMindApi {
   saveSession(req: SessionSaveRequest): Promise<SaveOutcome>
   listSessions(query?: SessionQuery): Promise<SessionRecord[]>
   getOverview(): Promise<OverviewStats>
+  listSkillStates(): Promise<SkillStateRecord[]>
 }

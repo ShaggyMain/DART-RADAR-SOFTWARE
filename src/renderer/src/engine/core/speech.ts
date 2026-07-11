@@ -19,15 +19,20 @@ export function speak(text: string, onEnd: () => void, rate = 1): () => void {
   const finish = (): void => {
     if (!done) {
       done = true
+      clearTimeout(watchdog)
       onEnd()
     }
   }
   utterance.onend = finish
   utterance.onerror = finish
+  // Some platforms have speechSynthesis but no working voices and never
+  // fire end/error — a generous watchdog keeps audio tasks from hanging.
+  const watchdog = setTimeout(finish, 5000 + (text.length * 100) / rate)
   window.speechSynthesis.cancel()
   window.speechSynthesis.speak(utterance)
   return () => {
     done = true
+    clearTimeout(watchdog)
     window.speechSynthesis.cancel()
   }
 }

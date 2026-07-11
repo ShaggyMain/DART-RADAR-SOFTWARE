@@ -736,3 +736,33 @@ input[type='text'] {
   text-align: center;
   padding: 12px 0;
 }
+
+/* Exam mode */
+.stanine-bar {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.stanine-cell {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.stanine-cell.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.task-card.recommended {
+  border-color: var(--accent-dim);
+  background: linear-gradient(180deg, rgba(57, 192, 212, 0.07), transparent);
+}

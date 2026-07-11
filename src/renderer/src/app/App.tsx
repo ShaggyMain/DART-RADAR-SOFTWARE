@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Route, Routes } from 'react-router-dom'
 import { Dashboard } from '@renderer/pages/Dashboard'
+import { ExamPage } from '@renderer/pages/ExamPage'
 import { SettingsPage } from '@renderer/pages/SettingsPage'
 import { StatsPage } from '@renderer/pages/StatsPage'
 import { TaskPage } from '@renderer/pages/TaskPage'
@@ -22,6 +23,7 @@ export default function App(): React.JSX.Element {
         <NavLink to="/" end>
           Dashboard
         </NavLink>
+        <NavLink to="/exam">Exam simulation</NavLink>
         <NavLink to="/stats">Statistics</NavLink>
         <NavLink to="/settings">Settings</NavLink>
         <div className="spacer" />
@@ -31,6 +33,7 @@ export default function App(): React.JSX.Element {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/task/:taskId" element={<TaskPage />} />
+          <Route path="/exam" element={<ExamPage />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Routes>

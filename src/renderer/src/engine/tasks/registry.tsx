@@ -7,6 +7,8 @@ import { conflictScanLogic } from './conflict-scan/generator'
 import { ConflictScanView } from './conflict-scan/View'
 import { dividedAttentionLogic } from './divided-attention/generator'
 import { DividedAttentionView } from './divided-attention/View'
+import { englishListeningLogic } from './english-listening/generator'
+import { EnglishListeningView } from './english-listening/View'
 import { multiAttentionLogic } from './multi-attention/generator'
 import { MultiAttentionView } from './multi-attention/View'
 import { multipassLogic } from './multipass/generator'
@@ -227,6 +229,19 @@ export const TASKS: TaskEntry[] = [
     extraLabels: { mathAccuracy: 'Math accuracy' },
     generate: memorizePictogramsLogic.generate,
     View: MemorizePictogramsView
+  }),
+  entry({
+    id: 'english-listening',
+    name: 'English Listening',
+    category: 'english',
+    shortDesc: 'Listen to short announcements; answer detail questions.',
+    instructions: [
+      'A short spoken announcement plays (gate changes, schedules, weather updates — everyday airport English, no ATC knowledge needed).',
+      'Listen for the details: places, times, numbers, rooms and gates. At lower difficulty you may replay the passage once; from difficulty 3 it plays only once.',
+      'Then answer the comprehension questions from memory. With audio off, the passage is shown as text instead.'
+    ],
+    generate: englishListeningLogic.generate,
+    View: EnglishListeningView
   }),
   entry({
     id: 'radar-dart',

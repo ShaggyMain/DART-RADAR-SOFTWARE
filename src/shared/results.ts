@@ -54,3 +54,12 @@ export interface SessionQuery {
   /** Max rows, newest first. Defaults applied by the storage layer. */
   limit?: number
 }
+
+/** Per-task ability snapshot maintained on every save (adaptive difficulty). */
+export interface SkillStateRecord {
+  taskId: TaskId
+  /** Rolling mean accuracy of the last sessions (0..1). */
+  rating: number
+  sessionsCount: number
+  lastSeen: number
+}

@@ -4,7 +4,13 @@ import type { DatabaseSync } from 'node:sqlite'
 import { IPC, type AppInfo } from '@shared/ipc'
 import type { SessionQuery, SessionSaveRequest } from '@shared/results'
 import { getSettings, updateSettings } from '../storage/settingsStore'
-import { getOverview, listSessions, openDatabase, saveSession } from '../storage/db'
+import {
+  getOverview,
+  listSessions,
+  listSkillStates,
+  openDatabase,
+  saveSession
+} from '../storage/db'
 
 let db: DatabaseSync | null = null
 
@@ -29,4 +35,5 @@ export function registerIpcHandlers(ipcMain: IpcMain): void {
     return listSessions(getDb(), query ?? {})
   })
   ipcMain.handle(IPC.resultsOverview, () => getOverview(getDb()))
+  ipcMain.handle(IPC.skillsList, () => listSkillStates(getDb()))
 }

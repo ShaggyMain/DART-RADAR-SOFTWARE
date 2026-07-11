@@ -223,6 +223,28 @@ export function listSessions(
   return rows.map(toRecord)
 }
 
+export function listSkillStates(
+  db: DatabaseSync,
+  profileId = DEFAULT_PROFILE_ID
+): import('@shared/results').SkillStateRecord[] {
+  const rows = db
+    .prepare(
+      'SELECT task_id, rating, sessions_count, last_seen FROM skill_state WHERE profile_id = ?'
+    )
+    .all(profileId) as unknown as {
+    task_id: string
+    rating: number
+    sessions_count: number
+    last_seen: number
+  }[]
+  return rows.map((r) => ({
+    taskId: r.task_id as TaskId,
+    rating: r.rating,
+    sessionsCount: r.sessions_count,
+    lastSeen: r.last_seen
+  }))
+}
+
 /** Overview across all tasks; recent mean accuracy over the last 20 runs. */
 export function getOverview(db: DatabaseSync, profileId = DEFAULT_PROFILE_ID): OverviewStats {
   const totals = db

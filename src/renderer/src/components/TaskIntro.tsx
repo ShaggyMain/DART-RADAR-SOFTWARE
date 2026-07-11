@@ -7,6 +7,8 @@ interface Props {
   difficulty: Difficulty
   onDifficultyChange: (d: Difficulty) => void
   onStart: () => void
+  /** Adaptive suggestion from recent results (M7); null = no history. */
+  recommendedDifficulty?: Difficulty | null
 }
 
 export function TaskIntro({
@@ -14,7 +16,8 @@ export function TaskIntro({
   instructions,
   difficulty,
   onDifficultyChange,
-  onStart
+  onStart,
+  recommendedDifficulty
 }: Props): React.JSX.Element {
   return (
     <div className="session">
@@ -44,6 +47,12 @@ export function TaskIntro({
           Start
         </button>
       </div>
+      {recommendedDifficulty != null && (
+        <p style={{ color: 'var(--text-dim)', fontSize: '0.82rem', marginTop: 10 }}>
+          Level {recommendedDifficulty} suggested from your recent results
+          {recommendedDifficulty !== difficulty ? ' — you have picked a different level.' : '.'}
+        </p>
+      )}
     </div>
   )
 }

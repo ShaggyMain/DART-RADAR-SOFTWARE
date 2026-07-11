@@ -80,7 +80,7 @@ function over a seeded PRNG. The same seed always reproduces the identical sessi
 | Multipass — Approach Control | routing + strips + audio callsigns | ✅ M5 |
 | Radar Control — Gates | manual vectoring + efficiency + radio checks | ✅ M5 |
 | Strip Management | conflict detection from strip data | ✅ M5 |
-| English Listening | listening comprehension | ⏳ M6 |
+| English Listening | listening comprehension (template passages + TTS) | ✅ M6 |
 
 ## Roadmap
 
@@ -93,6 +93,11 @@ function over a seeded PRNG. The same seed always reproduces the identical sessi
 - **M5 — Simulations** ✅ four FEAST-II-style work-samples on the shared aircraft
   kinematics core (deterministic sims, pure scorers over event logs, NATO-phonetic
   TTS audio sub-tasks with visual fallback)
-- **M6 — English listening** ⏳ original passages + question bank
-- **M7 — Adaptive difficulty & exam simulation** ⏳ chained modules, stanine-style practice summary
+- **M6 — English listening** ✅ original template passages with procedural slot-filling
+  (destinations, gates, times change every run), TTS playback with replay budget and a
+  text fallback when audio is off
+- **M7 — Adaptive difficulty & exam simulation** ✅ per-task recommended difficulty
+  (raise >85% rolling accuracy, lower <60%), "Recommended now" training suggestions,
+  and chained exam mode (short/full blueprints, locked settings, mandatory breaks,
+  no feedback until a stanine-style practice summary)
 - **M8 — Packaging** ⏳ electron-builder Windows installer, profiles, accessibility, QA

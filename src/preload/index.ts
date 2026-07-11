@@ -9,7 +9,8 @@ const api: VectorMindApi = {
   getAppInfo: () => ipcRenderer.invoke(IPC.appInfo),
   saveSession: (req: SessionSaveRequest) => ipcRenderer.invoke(IPC.resultsSave, req),
   listSessions: (query?: SessionQuery) => ipcRenderer.invoke(IPC.resultsList, query),
-  getOverview: () => ipcRenderer.invoke(IPC.resultsOverview)
+  getOverview: () => ipcRenderer.invoke(IPC.resultsOverview),
+  listSkillStates: () => ipcRenderer.invoke(IPC.skillsList)
 }
 
 contextBridge.exposeInMainWorld('vectormind', api)

@@ -1,5 +1,6 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { recommendDifficulty } from '@shared/adaptive'
 import type { SaveOutcome } from '@shared/results'
 import type { Difficulty, TaskId, TaskResult } from '@shared/types'
 import { ResultsSummary, type SaveInfo } from '@renderer/components/ResultsSummary'
@@ -23,12 +24,36 @@ export function TaskPage(): React.JSX.Element {
   const timingMultiplier = useTimingMultiplier()
 
   const [difficulty, setDifficulty] = useState<Difficulty>(defaultDifficulty)
+  const [recommended, setRecommended] = useState<Difficulty | null>(null)
   const [phase, setPhase] = useState<Phase>({ kind: 'intro' })
   const [runCounter, setRunCounter] = useState(0)
   const [saveInfo, setSaveInfo] = useState<SaveInfo>({ state: 'unavailable' })
   const startedAtRef = useRef(0)
+  const userPickedRef = useRef(false)
 
   const entry = taskId ? TASKS_BY_ID.get(taskId) : undefined
+
+  // Adaptive difficulty (M7): preselect the recommended level from recent
+  // sessions at this task — unless the user has already picked one.
+  useEffect(() => {
+    if (!entry) return
+    let cancelled = false
+    void window.vectormind
+      ?.listSessions({ taskId: entry.id, limit: 10 })
+      .then((sessions) => {
+        if (cancelled || sessions.length === 0) return
+        const rec = recommendDifficulty(
+          sessions.map((s) => ({ difficulty: s.difficulty, accuracy: s.accuracy })),
+          defaultDifficulty
+        )
+        setRecommended(rec)
+        if (!userPickedRef.current) setDifficulty(rec)
+      })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entry?.id])
 
   const scenario = useMemo(
     () => (entry && phase.kind === 'run' ? entry.generate(phase.seed, difficulty) : null),
@@ -82,8 +107,12 @@ export function TaskPage(): React.JSX.Element {
         name={entry.name}
         instructions={entry.instructions}
         difficulty={difficulty}
-        onDifficultyChange={setDifficulty}
+        onDifficultyChange={(d) => {
+          userPickedRef.current = true
+          setDifficulty(d)
+        }}
         onStart={startRun}
+        recommendedDifficulty={recommended}
       />
     )
   }
