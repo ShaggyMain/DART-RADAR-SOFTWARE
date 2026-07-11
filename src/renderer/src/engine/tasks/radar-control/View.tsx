@@ -190,11 +190,22 @@ export function RadarControlView({
             ctx.strokeRect(x - 7, y - 7, 14, 14)
           }
 
+          // keep labels inside the scope near the edges
+          const lx = x + 8 > SIZE - 88 ? x - 88 : x + 8
+          let lyA = y - 8
+          let lyB = y + 4
+          if (y < 22) {
+            lyA = y + 18
+            lyB = y + 30
+          } else if (y > SIZE - 14) {
+            lyA = y - 22
+            lyB = y - 10
+          }
           ctx.fillStyle = '#dbe4f5'
           ctx.font = '11px system-ui'
-          ctx.fillText(ac.callsign, x + 8, y - 8)
+          ctx.fillText(ac.callsign, lx, lyA)
           ctx.fillStyle = '#8fa0bf'
-          ctx.fillText(`FL${Math.round(ac.altitudeFl)} → ${ac.gateId}`, x + 8, y + 4)
+          ctx.fillText(`FL${Math.round(ac.altitudeFl)} → ${ac.gateId}`, lx, lyB)
         }
       },
       onDone: () => {
@@ -225,6 +236,8 @@ export function RadarControlView({
         </div>
         <canvas
           ref={canvasRef}
+          role="img"
+          aria-label="Radar scope with aircraft, exit gates and corridors"
           width={SIZE}
           height={SIZE}
           style={{ borderRadius: 10, border: '1px solid var(--border)', maxWidth: '100%' }}

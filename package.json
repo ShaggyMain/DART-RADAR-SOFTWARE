@@ -12,7 +12,9 @@
     "preview": "electron-vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json"
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "dist": "electron-vite build && electron-builder --win nsis",
+    "dist:dir": "electron-vite build && electron-builder --dir"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
@@ -20,6 +22,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.2.0",
     "electron": "^43.1.0",
+    "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
     "typescript": "^7.0.2",
     "vite": "^7.3.6",
@@ -31,5 +34,7 @@
     "react-dom": "^19.2.7",
     "react-router-dom": "^7.18.1",
     "zustand": "^5.0.14"
-  }
+  },
+  "author": "VectorMind",
+  "homepage": "https://github.com/ShaggyMain/DART-RADAR-SOFTWARE"
 }

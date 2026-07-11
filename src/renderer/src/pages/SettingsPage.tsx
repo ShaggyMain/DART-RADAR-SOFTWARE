@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { TimingPreset } from '@shared/settings'
 import type { Difficulty } from '@shared/types'
 import { DIFFICULTIES } from '@shared/types'
@@ -12,6 +13,36 @@ const PRESETS: { value: TimingPreset; label: string; hint: string }[] = [
 export function SettingsPage(): React.JSX.Element {
   const settings = useSettings((s) => s.settings)
   const update = useSettings((s) => s.update)
+  const load = useSettings((s) => s.load)
+  const [transferStatus, setTransferStatus] = useState<string | null>(null)
+  const bridge = window.vectormind
+
+  const doExport = async (): Promise<void> => {
+    if (!bridge) return
+    setTransferStatus('Exporting…')
+    const result = await bridge.exportData()
+    setTransferStatus(
+      result.status === 'saved'
+        ? `Exported ${result.sessions} sessions to ${result.path}`
+        : null
+    )
+  }
+
+  const doImport = async (): Promise<void> => {
+    if (!bridge) return
+    setTransferStatus('Importing…')
+    const result = await bridge.importData()
+    if (result.status === 'imported') {
+      setTransferStatus(
+        `Imported ${result.imported} sessions (${result.skipped} already present or skipped).`
+      )
+      await load() // settings may have come with the bundle
+    } else if (result.status === 'invalid') {
+      setTransferStatus('That file is not a valid VectorMind export.')
+    } else {
+      setTransferStatus(null)
+    }
+  }
 
   return (
     <div>
@@ -81,6 +112,26 @@ export function SettingsPage(): React.JSX.Element {
           </button>
         </div>
       </div>
+      <div className="settings-row">
+        <div className="info">
+          <div className="label">Training data</div>
+          <div className="hint">
+            Export your sessions and settings as a JSON file, or import a previous export.
+            Importing merges — existing sessions are never duplicated.
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button type="button" className="btn" onClick={() => void doExport()} disabled={!bridge}>
+            Export…
+          </button>
+          <button type="button" className="btn" onClick={() => void doImport()} disabled={!bridge}>
+            Import…
+          </button>
+        </div>
+      </div>
+      {transferStatus && (
+        <p style={{ color: 'var(--text-dim)', fontSize: '0.85rem' }}>{transferStatus}</p>
+      )}
       <p className="disclaimer">
         VectorMind is an independent practice tool, not affiliated with EUROCONTROL (FEAST),
         PANSA/PAŻP, SkyTest, or any test vendor. Practice scores are for training feedback only.

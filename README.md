@@ -31,7 +31,15 @@ npm run dev        # HMR development window
 npm run test       # unit tests
 npm run typecheck  # strict TS across main/preload/renderer
 npm run build      # production build into out/
+npm run dist       # Windows NSIS installer into dist/ (run on Windows)
 ```
+
+**Packaging:** `npm run dist` produces `dist/VectorMind Setup <version>.exe`
+(NSIS, x64, custom icon, desktop shortcut, choosable install directory). Run it
+on Windows — no extra tooling needed. Cross-building from Linux additionally
+requires `wine` + `wine32`, and in restricted networks the mirror variables:
+`ELECTRON_MIRROR=https://registry.npmmirror.com/-/binary/electron/`
+`ELECTRON_BUILDER_BINARIES_MIRROR=https://registry.npmmirror.com/-/binary/electron-builder-binaries/`
 
 > In restricted networks the Electron binary download from GitHub may fail during
 > `npm install`. Re-run it with a mirror:
@@ -48,7 +56,7 @@ src/
               task contracts, scoring, glyphs, geometry, number-words
   renderer/
     src/app/        shell, routing, styles
-    src/pages/      Dashboard, TaskPage, Settings
+    src/pages/      Dashboard, TaskPage, ExamPage, Stats, Settings
     src/components/ shared UI (options, countdowns, SVG primitives)
     src/engine/
       core/         item runner, countdowns, speech helper
@@ -100,4 +108,9 @@ function over a seeded PRNG. The same seed always reproduces the identical sessi
   (raise >85% rolling accuracy, lower <60%), "Recommended now" training suggestions,
   and chained exam mode (short/full blueprints, locked settings, mandatory breaks,
   no feedback until a stanine-style practice summary)
-- **M8 — Packaging** ⏳ electron-builder Windows installer, profiles, accessibility, QA
+- **M8 — Packaging & polish** ✅ electron-builder Windows NSIS installer with an
+  original app icon, training-data export/import (merging, duplicate-safe),
+  accessibility pass (keyboard access, focus outlines, canvas labels) and QA
+  fixes (scope-edge label clamping, gauge scale labels)
+
+**All eight milestones of the original plan are complete.**

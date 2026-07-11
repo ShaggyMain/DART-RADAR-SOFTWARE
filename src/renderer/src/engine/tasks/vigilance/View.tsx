@@ -100,7 +100,7 @@ export function VigilanceView({
         {pressCount} presses
       </div>
       <div className="stimulus-box" style={{ minHeight: SIZE + 30 }}>
-        <canvas ref={canvasRef} width={SIZE} height={SIZE} style={{ borderRadius: 10 }} />
+        <canvas ref={canvasRef} role="img" aria-label="Ring of positions with a stepping marker" width={SIZE} height={SIZE} style={{ borderRadius: 10 }} />
       </div>
     </div>
   )

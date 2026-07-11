@@ -35,7 +35,13 @@ function MapSvg({ item, picked }: { item: PlanningItem; picked: string[] }): Rea
               points={`${x},${y - 7} ${x + 6},${y + 6} ${x - 6},${y + 6}`}
               fill={a.lowFuel ? 'var(--bad)' : 'var(--accent)'}
             />
-            <text x={x + 9} y={y + 4} fill="var(--text-dim)" fontSize={10}>
+            <text
+              x={x > MAP - 64 ? x - 9 : x + 9}
+              y={y + 4}
+              textAnchor={x > MAP - 64 ? 'end' : 'start'}
+              fill="var(--text-dim)"
+              fontSize={10}
+            >
               {a.callsign}
             </text>
           </g>
@@ -115,8 +121,15 @@ export function PlanningView({
                 return (
                   <tr
                     key={a.callsign}
+                    tabIndex={pickedPos === -1 ? 0 : -1}
                     onClick={() => {
                       if (pickedPos === -1) setOrder([...order, a.callsign])
+                    }}
+                    onKeyDown={(e) => {
+                      if ((e.key === 'Enter' || e.key === ' ') && pickedPos === -1) {
+                        e.preventDefault()
+                        setOrder([...order, a.callsign])
+                      }
                     }}
                     style={{
                       cursor: pickedPos === -1 ? 'pointer' : 'default',

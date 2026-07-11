@@ -16,8 +16,19 @@ export const IPC = {
   resultsSave: 'results:save',
   resultsList: 'results:list',
   resultsOverview: 'results:overview',
-  skillsList: 'skills:list'
+  skillsList: 'skills:list',
+  dataExport: 'data:export',
+  dataImport: 'data:import'
 } as const
+
+export type ExportResult =
+  | { status: 'saved'; path: string; sessions: number }
+  | { status: 'canceled' }
+
+export type ImportResult =
+  | { status: 'imported'; imported: number; skipped: number }
+  | { status: 'canceled' }
+  | { status: 'invalid' }
 
 export interface AppInfo {
   version: string
@@ -33,4 +44,6 @@ export interface VectorMindApi {
   listSessions(query?: SessionQuery): Promise<SessionRecord[]>
   getOverview(): Promise<OverviewStats>
   listSkillStates(): Promise<SkillStateRecord[]>
+  exportData(): Promise<ExportResult>
+  importData(): Promise<ImportResult>
 }

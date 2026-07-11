@@ -128,6 +128,8 @@ export function DividedAttentionView({
       <div className="stimulus-box" style={{ minHeight: canvasH + 30 }}>
         <canvas
           ref={canvasRef}
+          role="img"
+          aria-label="Grid of panels with moving dots and bars"
           width={CANVAS_W}
           height={canvasH}
           style={{ borderRadius: 10, maxWidth: '100%' }}

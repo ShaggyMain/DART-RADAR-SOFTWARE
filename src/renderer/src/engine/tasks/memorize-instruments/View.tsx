@@ -45,6 +45,12 @@ function GaugeSvg({ gauge }: { gauge: Gauge }): React.JSX.Element {
         <text x={c} y={size - 8} textAnchor="middle" fill="var(--text)" fontSize={13} fontWeight={700}>
           {gauge.name}
         </text>
+        <text x={c - r * 0.87} y={c + r * 0.5 + 14} textAnchor="middle" fill="var(--text-dim)" fontSize={9}>
+          {gauge.min}
+        </text>
+        <text x={c + r * 0.87} y={c + r * 0.5 + 14} textAnchor="middle" fill="var(--text-dim)" fontSize={9}>
+          {gauge.max}
+        </text>
       </svg>
       <div style={{ color: 'var(--text-dim)', fontSize: '0.72rem' }}>
         {gauge.min}–{gauge.max} {gauge.unit}

@@ -1,0 +1,26 @@
+appId: app.vectormind.desktop
+productName: VectorMind
+copyright: VectorMind — independent practice tool, not affiliated with EUROCONTROL/FEAST
+
+directories:
+  output: dist
+  buildResources: build
+
+files:
+  - out/**
+
+# node:sqlite is built into Electron — no native modules to rebuild/unpack.
+npmRebuild: false
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.png
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  shortcutName: VectorMind
