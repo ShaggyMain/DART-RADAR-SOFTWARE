@@ -15,6 +15,7 @@ publish:
   provider: github
   owner: ShaggyMain
   repo: DART-RADAR-SOFTWARE
+  releaseType: release
 
 # node:sqlite is built into Electron — no native modules to rebuild/unpack.
 npmRebuild: false

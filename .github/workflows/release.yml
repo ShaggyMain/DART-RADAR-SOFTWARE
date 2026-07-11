@@ -13,6 +13,9 @@ on:
   push:
     tags:
       - 'v*'
+  # Manual trigger: builds the version currently in package.json and
+  # publishes it as a full release (electron-builder creates the tag).
+  workflow_dispatch:
 
 permissions:
   contents: write
