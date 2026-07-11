@@ -1,3 +1,5 @@
+import { tmpdir } from 'os'
+import { join } from 'path'
 import { describe, expect, it } from 'vitest'
 import type { SessionSaveRequest } from '@shared/results'
 import { getOverview, listSessions, openDatabase, saveSession } from './db'
@@ -129,7 +131,7 @@ describe('storage', () => {
 
   it('migration is idempotent across reopen (file db)', () => {
     // in-memory DBs vanish on close; use a temp file for the reopen check
-    const path = `${process.env.TMPDIR ?? '/tmp'}/vectormind-test-${Date.now()}.db`
+    const path = join(tmpdir(), `vectormind-test-${Date.now()}.db`)
     const db1 = openDatabase(path)
     saveSession(db1, makeRequest())
     db1.close()

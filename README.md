@@ -23,6 +23,14 @@ process): attention, memory, spatial orientation, planning and multitasking.
 - Tests: **Vitest** (every generator/scorer is pure and unit-tested; the
   storage layer is Electron-free and tested against in-memory databases)
 
+## Install (users)
+
+Download the latest **`VectorMind Setup <version>.exe`** from
+[Releases](https://github.com/ShaggyMain/DART-RADAR-SOFTWARE/releases) and run it.
+Windows SmartScreen may warn because the app is unsigned — click
+*More info → Run anyway*. Once installed, new versions arrive via
+**Settings → Check for updates**; no reinstalling by hand.
+
 ## Development
 
 ```bash
