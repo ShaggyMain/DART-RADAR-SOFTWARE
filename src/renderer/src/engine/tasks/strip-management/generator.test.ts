@@ -19,7 +19,6 @@ function tinyScenario(overrides: Partial<StripScenario> = {}): StripScenario {
     updates: [],
     durationMs: 300_000,
     conflictEtaGapMin: 3,
-    flagWindowMs: 25_000,
     plannedConflicts: 0,
     ...overrides
   }
@@ -115,23 +114,26 @@ describe('strip-management generator', () => {
 })
 
 describe('strip-management scorer', () => {
-  it('scores flags within the window, ignores late, counts false ones', () => {
+  it('scores any flag during the episode, ignores duplicates, counts false ones', () => {
     const s = generate('sc', 2)
     const eps = computeEpisodes(s)
     expect(eps.length).toBeGreaterThan(0)
     const flags = [
-      { tMs: eps[0].startMs + 5_000, callsign: eps[0].a }, // hit
+      { tMs: eps[0].startMs + 5_000, callsign: eps[0].a }, // hit (rt = earliness)
       { tMs: eps[0].startMs + 6_000, callsign: eps[0].b }, // duplicate → ignored
       { tMs: 1_000, callsign: 'ZZZ999' } // false flag
     ]
     if (eps.length > 1) {
-      // late flag on a real conflict: not a hit, not a false alarm
-      flags.push({ tMs: Math.min(eps[1].startMs + s.flagWindowMs + 5_000, eps[1].endMs), callsign: eps[1].a })
+      // a LATE flag still counts — earliness only shows in rtMs
+      flags.push({ tMs: eps[1].endMs - 1, callsign: eps[1].a })
     }
     const r = score(s, flags)
     expect(r.items[0].correct).toBe(true)
     expect(r.items[0].rtMs).toBe(5_000)
-    if (eps.length > 1) expect(r.items[1].correct).toBe(false)
+    if (eps.length > 1) {
+      expect(r.items[1].correct).toBe(true)
+      expect(r.items[1].rtMs).toBeGreaterThan(20_000)
+    }
     expect(r.extra?.falseFlags).toBe(1)
     expect(r.totalItems).toBe(eps.length)
   })

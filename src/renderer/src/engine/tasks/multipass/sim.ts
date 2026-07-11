@@ -33,8 +33,16 @@ export const MAX_SPEED_KTS = 420
  * only). Deterministic given scenario + command sequence. The report
  * window is passed in pre-scaled by the timing preset.
  */
+export interface MpEvent {
+  tMs: number
+  text: string
+  ok: boolean
+}
+
 export class MultipassSim {
   readonly aircraft: MpAircraft[] = []
+  /** Feedback feed for the view: landings, losses, report outcomes. */
+  readonly eventLog: MpEvent[] = []
   private readonly tracker = new ConflictTracker()
   private readonly outcomes: MpLog['outcomes'] = []
   private readonly reports: MpLog['reports'] = []
@@ -86,6 +94,7 @@ export class MultipassSim {
     if (ac && ac.reportState === 'due') {
       ac.reportState = 'acked'
       this.reports.push({ callsign, acked: true })
+      this.eventLog.push({ tMs: this.elapsedMs, text: `${callsign} report acknowledged`, ok: true })
       return true
     }
     return false
@@ -140,6 +149,7 @@ export class MultipassSim {
       if (ac.reportState === 'due' && this.elapsedMs > ac.reportDeadlineMs) {
         ac.reportState = 'missed'
         this.reports.push({ callsign: ac.callsign, acked: false })
+        this.eventLog.push({ tMs: this.elapsedMs, text: `${ac.callsign} REPORT missed`, ok: false })
       }
     }
 
@@ -153,9 +163,14 @@ export class MultipassSim {
             ac.reportState = 'missed'
             this.reports.push({ callsign: ac.callsign, acked: false })
           }
-          this.outcomes.push({
-            callsign: ac.callsign,
-            landedCorrect: ac.clearedTo === ac.destination
+          const correct = ac.clearedTo === ac.destination
+          this.outcomes.push({ callsign: ac.callsign, landedCorrect: correct })
+          this.eventLog.push({
+            tMs: this.elapsedMs,
+            text: correct
+              ? `${ac.callsign} landed at ${ac.clearedTo} ✓`
+              : `${ac.callsign} landed at ${ac.clearedTo} — wrong airport (dest ${ac.destination})`,
+            ok: correct
           })
           this.aircraft.splice(i, 1)
           continue
@@ -163,6 +178,11 @@ export class MultipassSim {
       }
       if (ac.x < -1 || ac.x > s.sectorNm + 1 || ac.y < -1 || ac.y > s.sectorNm + 1) {
         this.outcomes.push({ callsign: ac.callsign, landedCorrect: false })
+        this.eventLog.push({
+          tMs: this.elapsedMs,
+          text: `${ac.callsign} left the sector — lost${ac.clearedTo ? '' : ' (was never cleared!)'}`,
+          ok: false
+        })
         this.aircraft.splice(i, 1)
       }
     }

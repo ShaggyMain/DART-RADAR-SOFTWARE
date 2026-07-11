@@ -28,6 +28,7 @@ export function MultipassView({
   const [remainingMs, setRemainingMs] = useState(scenario.durationMs)
   const [hud, setHud] = useState({ active: 0, conflicts: 0, landed: 0 })
   const [radioText, setRadioText] = useState<string | null>(null)
+  const [events, setEvents] = useState<{ text: string; ok: boolean }[]>([])
   const selectedRef = useRef<string | null>(null)
   selectedRef.current = selected
   const simSpeedRef = useRef(simSpeed)
@@ -127,6 +128,7 @@ export function MultipassView({
             conflicts: sim.conflictEpisodes,
             landed: sim.landedCount
           })
+          setEvents(sim.eventLog.slice(-3).map((e) => ({ text: e.text, ok: e.ok })))
         }
       },
       render: () => {
@@ -168,6 +170,18 @@ export function MultipassView({
             : ac.clearedTo
               ? '#39c0d4'
               : '#e0b34d'
+
+          // dashed guidance line to the cleared airport
+          if (ac.clearedTo) {
+            const apt = scenario.airports.find((a) => a.id === ac.clearedTo)!
+            ctx.strokeStyle = '#1f7f8f'
+            ctx.setLineDash([4, 5])
+            ctx.beginPath()
+            ctx.moveTo(x, y)
+            ctx.lineTo(px(apt.x), py(apt.y))
+            ctx.stroke()
+            ctx.setLineDash([])
+          }
 
           const leadNm = ac.speedKts / 60
           const rad = (ac.headingDeg * Math.PI) / 180
@@ -261,7 +275,13 @@ export function MultipassView({
           {selectedAc ? (
             <>
               <strong>{selectedAc.callsign}</strong> · dest {selectedAc.destination} ·{' '}
-              {selectedAc.clearedTo ? `cleared ${selectedAc.clearedTo}` : 'UNCLEARED'}
+              {selectedAc.clearedTo ? (
+                `cleared ${selectedAc.clearedTo}`
+              ) : (
+                <span style={{ color: 'var(--warn)' }}>
+                  UNCLEARED — press Clear {selectedAc.destination} or it will never land!
+                </span>
+              )}
             </>
           ) : (
             'Click an aircraft or strip'
@@ -296,6 +316,15 @@ export function MultipassView({
             Resume to cleared airport
           </button>
         </div>
+        {events.length > 0 && (
+          <div className="event-feed">
+            {events.map((e, i) => (
+              <div key={i} style={{ color: e.ok ? 'var(--good)' : 'var(--bad)' }}>
+                {e.text}
+              </div>
+            ))}
+          </div>
+        )}
         <div className="traffic-list">
           {(simRef.current?.aircraft ?? []).map((ac) => (
             <button

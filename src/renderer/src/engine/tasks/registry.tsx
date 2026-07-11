@@ -267,9 +267,10 @@ export const TASKS: TaskEntry[] = [
     category: 'simulation',
     shortDesc: 'Route arrivals to the right airport, work strips and audio at once.',
     instructions: [
-      'Every arrival must be CLEARED to its destination airport (A or B, shown on its label and strip). Uncleared aircraft fly straight on and are lost when they leave the sector.',
-      'Keep 4 NM lateral separation (all traffic is at one level) — use the 30° vector buttons, then "Resume".',
-      'When a flight nears its airport its strip calls REPORT — click that strip in time. When a callsign is spoken, press M (or MATCH) ONLY if that callsign is on your scope.'
+      'THE CORE RULE: an aircraft only lands after you CLEAR it — click the aircraft (amber = uncleared), then press "Clear A" or "Clear B" matching the destination on its label (→A / →B). It then flies there by itself (dashed line) and lands. Uncleared aircraft never land: they fly straight on and are lost.',
+      'Keep 4 NM lateral separation (all traffic is at one level) — use the 30° vector buttons for avoidance, then "Resume to cleared airport".',
+      'Two side duties: when a flight nears its airport, its strip flashes REPORT — click that strip in time. And when a callsign is spoken, press M (or MATCH) ONLY if that callsign is currently on your scope.',
+      'The event feed on the right confirms every landing, loss and report.'
     ],
     extraLabels: {
       conflicts: 'Separation losses',
@@ -309,9 +310,10 @@ export const TASKS: TaskEntry[] = [
     category: 'simulation',
     shortDesc: 'Detect conflicts from flight-strip data, not the radar picture.',
     instructions: [
-      'Flight strips arrive at control-point columns, each showing a flight level and a live ETA countdown.',
-      'Two strips CONFLICT when they are at the same point, at the same level, and their ETAs are less than 3 minutes apart. Click one strip of a conflicting pair to flag it — the earlier the better.',
-      'Watch for LEVEL UPDATES (highlighted): they can create new conflicts. False flags are penalised.'
+      'Flight strips arrive at control-point columns, each showing a flight level (FL) and a live ETA countdown. Most strips are safe — only SOME form conflicts.',
+      'Two strips CONFLICT when all three match: same COLUMN, same FL, and ETAs less than 3 minutes apart. Compare strips within each column, and when you spot such a pair, click ONE of its two strips.',
+      'You get instant feedback: a correct click turns BOTH strips of the pair green (found, done); a wrong click flashes red and adds to your false counter — so do not click on suspicion alone.',
+      'Watch for LEVEL UPDATES (amber highlight): a changed FL can create a brand-new conflict. Finding conflicts earlier gives a better time score.'
     ],
     extraLabels: { falseFlags: 'False flags' },
     generate: stripManagementLogic.generate,

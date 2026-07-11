@@ -45,8 +45,6 @@ export interface StripScenario extends ScenarioBase {
   durationMs: number
   /** ETA gap below which same-point same-level strips conflict (minutes). */
   conflictEtaGapMin: number
-  /** Time from episode start within which a flag scores (ms). */
-  flagWindowMs: number
   /** Ground truth: how many conflict episodes the schedule contains. */
   plannedConflicts: number
 }
@@ -327,7 +325,6 @@ export function generate(seed: string, difficulty: Difficulty): StripScenario {
     updates: updates.sort((a, b) => a.tMs - b.tMs),
     durationMs: cfg.durationMs,
     conflictEtaGapMin: 3,
-    flagWindowMs: 25_000,
     plannedConflicts: 0
   }
   scenario.plannedConflicts = computeEpisodes(scenario).length
@@ -355,12 +352,12 @@ export function score(scenario: StripScenario, flags: FlagEvent[]): TaskResult {
       falseFlags++
       continue
     }
-    const withinWindow = flag.tMs <= episodes[idx].startMs + scenario.flagWindowMs
-    if (withinWindow && !hit[idx]) {
+    // Any flag while the conflict is active counts; rtMs records how early
+    // it was spotted. Duplicate flags on an already-found pair are ignored.
+    if (!hit[idx]) {
       hit[idx] = true
       rt[idx] = flag.tMs - episodes[idx].startMs
     }
-    // late or duplicate flags on a real conflict are ignored, not false
   }
 
   const items: ItemOutcome[] = episodes.map((_, index) => ({
