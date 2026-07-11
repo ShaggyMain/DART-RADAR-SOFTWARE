@@ -17,7 +17,13 @@ export interface RcAircraft extends AircraftKinematics {
   directNm: number
 }
 
-export type RcCommand = { type: 'turn'; deltaDeg: number } | { type: 'altitude'; deltaFl: number }
+export type RcCommand =
+  | { type: 'turn'; deltaDeg: number }
+  | { type: 'altitude'; deltaFl: number }
+  | { type: 'speed'; deltaKts: number }
+
+export const MIN_SPEED_KTS = 160
+export const MAX_SPEED_KTS = 520
 
 /** Live Radar Control simulation — no autopilot, player vectors everything. */
 export class RadarControlSim {
@@ -53,15 +59,20 @@ export class RadarControlSim {
     if (!ac) return
     if (cmd.type === 'turn') {
       ac.targetHeadingDeg = (((ac.targetHeadingDeg + cmd.deltaDeg) % 360) + 360) % 360
-    } else {
+    } else if (cmd.type === 'altitude') {
       const next = Math.round((ac.targetAltitudeFl + cmd.deltaFl) / 10) * 10
       ac.targetAltitudeFl = Math.min(400, Math.max(60, next))
+    } else {
+      const next = Math.round((ac.speedKts + cmd.deltaKts) / 20) * 20
+      ac.speedKts = Math.min(MAX_SPEED_KTS, Math.max(MIN_SPEED_KTS, next))
     }
   }
 
-  step(dtMs: number): void {
+  /** `moveScale` accelerates only aircraft motion (see DartSim.step). */
+  step(dtMs: number, moveScale = 1): void {
     this.elapsedMs += dtMs
     const s = this.scenario
+    const moveDt = dtMs * moveScale
 
     while (
       this.spawnCursor < s.spawns.length &&
@@ -87,7 +98,7 @@ export class RadarControlSim {
     for (const ac of this.aircraft) {
       const beforeX = ac.x
       const beforeY = ac.y
-      stepAircraft(ac, dtMs)
+      stepAircraft(ac, moveDt)
       ac.flownNm += Math.hypot(ac.x - beforeX, ac.y - beforeY)
     }
 

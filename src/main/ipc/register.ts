@@ -13,6 +13,8 @@ import {
   saveSession
 } from '../storage/db'
 import { exportData, importData, validateBundle } from '../storage/transfer'
+import { BrowserWindow } from 'electron'
+import { checkForUpdates, installUpdate } from '../updater'
 
 let db: DatabaseSync | null = null
 
@@ -38,6 +40,11 @@ export function registerIpcHandlers(ipcMain: IpcMain): void {
   })
   ipcMain.handle(IPC.resultsOverview, () => getOverview(getDb()))
   ipcMain.handle(IPC.skillsList, () => listSkillStates(getDb()))
+
+  ipcMain.handle(IPC.updateCheck, () =>
+    checkForUpdates(() => BrowserWindow.getAllWindows()[0] ?? null)
+  )
+  ipcMain.handle(IPC.updateInstall, () => installUpdate())
 
   ipcMain.handle(IPC.dataExport, async (): Promise<ExportResult> => {
     const stamp = new Date().toISOString().slice(0, 10)

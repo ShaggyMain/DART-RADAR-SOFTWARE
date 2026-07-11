@@ -66,6 +66,42 @@ describe('DartSim', () => {
     for (let i = 0; i < seconds * 10; i++) sim.step(100)
   }
 
+  it('moveScale accelerates only motion: a slow flight that misses its exit at 1x hands off at 6x', () => {
+    const mk = (): DartSim =>
+      new DartSim(
+        tinyScenario([
+          // 300 kt from the west edge must cross ~97 NM to EXIT-E — impossible
+          // in a 240 s session at real speed, but fine at 6x.
+          { tMs: 0, callsign: 'SLOW01', x: 0, y: 50, speedKts: 300, altitudeFl: 200, route: ['EXIT-E'] }
+        ])
+      )
+    const realTime = { ...tinyScenario([]), durationMs: 240_000 }
+    const sessionSteps = realTime.durationMs / 100
+
+    const slow = mk()
+    for (let i = 0; i < sessionSteps; i++) slow.step(100, 1)
+    expect(slow.getLog().handoffs).toHaveLength(0) // too slow to reach the exit
+
+    const fast = mk()
+    for (let i = 0; i < sessionSteps; i++) fast.step(100, 6)
+    const log = fast.getLog()
+    expect(log.handoffs).toHaveLength(1)
+    expect(log.handoffs[0]).toEqual({ callsign: 'SLOW01', correctExit: true })
+  })
+
+  it('the speed command adjusts speed within the envelope', () => {
+    const sim = new DartSim(
+      tinyScenario([
+        { tMs: 0, callsign: 'AAA111', x: 0, y: 50, speedKts: 300, altitudeFl: 200, route: ['EXIT-E'] }
+      ])
+    )
+    sim.step(100)
+    sim.command('AAA111', { type: 'speed', deltaKts: 20 })
+    expect(sim.find('AAA111')!.speedKts).toBe(320)
+    for (let i = 0; i < 40; i++) sim.command('AAA111', { type: 'speed', deltaKts: -20 })
+    expect(sim.find('AAA111')!.speedKts).toBe(160) // clamped to MIN_SPEED_KTS
+  })
+
   it('spawns aircraft at their scheduled times', () => {
     const sim = new DartSim(
       tinyScenario([

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { startLoop } from '@renderer/engine/core/gameLoop'
+import { useSettings } from '@renderer/state/settings'
 import type { TaskViewProps } from '../taskView'
 import { score, type DartScenario } from './generator'
 import { DartSim, type DartCommand } from './sim'
@@ -11,6 +12,7 @@ export function RadarDartView({
   timingMultiplier: _timingMultiplier, // real-time pace IS the task
   onFinish
 }: TaskViewProps<DartScenario>): React.JSX.Element {
+  const simSpeed = useSettings((s) => s.settings.simSpeed)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const simRef = useRef<DartSim | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
@@ -18,6 +20,8 @@ export function RadarDartView({
   const [hud, setHud] = useState({ active: 0, conflicts: 0, handoffs: 0 })
   const selectedRef = useRef<string | null>(null)
   selectedRef.current = selected
+  const simSpeedRef = useRef(simSpeed)
+  simSpeedRef.current = simSpeed
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -52,7 +56,7 @@ export function RadarDartView({
     const handle = startLoop({
       durationMs: scenario.durationMs,
       update: (dt, elapsed) => {
-        sim.step(dt)
+        sim.step(dt, simSpeedRef.current)
         hudTimer += dt
         if (hudTimer >= 250) {
           hudTimer = 0
@@ -212,6 +216,7 @@ export function RadarDartView({
             Conflicts {hud.conflicts}
           </span>
           <span>Handoffs {hud.handoffs}</span>
+          <span title="Simulation speed (change in Settings)">{simSpeed}×</span>
         </div>
         <div className="sim-selected">
           {selectedAc ? (
@@ -242,6 +247,12 @@ export function RadarDartView({
           </button>
           <button type="button" className="btn" disabled={!selectedAc} onClick={() => cmd({ type: 'altitude', deltaFl: -10 })}>
             Desc −10
+          </button>
+          <button type="button" className="btn" disabled={!selectedAc} onClick={() => cmd({ type: 'speed', deltaKts: 20 })}>
+            Spd +20
+          </button>
+          <button type="button" className="btn" disabled={!selectedAc} onClick={() => cmd({ type: 'speed', deltaKts: -20 })}>
+            Spd −20
           </button>
           <button
             type="button"

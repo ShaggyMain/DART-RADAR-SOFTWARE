@@ -1,8 +1,30 @@
-import { useState } from 'react'
-import type { TimingPreset } from '@shared/settings'
+import { useEffect, useState } from 'react'
+import type { UpdateStatus } from '@shared/ipc'
+import { SIM_SPEEDS, type TimingPreset } from '@shared/settings'
 import type { Difficulty } from '@shared/types'
 import { DIFFICULTIES } from '@shared/types'
 import { useSettings } from '@renderer/state/settings'
+
+function updateLine(status: UpdateStatus): string {
+  switch (status.phase) {
+    case 'idle':
+      return 'Press "Check for updates" to look for a newer version.'
+    case 'unsupported':
+      return status.reason
+    case 'checking':
+      return 'Checking for updates…'
+    case 'available':
+      return `Update ${status.version} found — downloading…`
+    case 'not-available':
+      return `You are on the latest version (${status.version}).`
+    case 'downloading':
+      return `Downloading update… ${status.percent}%`
+    case 'downloaded':
+      return `Update ${status.version} downloaded. Restart to install.`
+    case 'error':
+      return `Update error: ${status.message}`
+  }
+}
 
 const PRESETS: { value: TimingPreset; label: string; hint: string }[] = [
   { value: 'relaxed', label: 'Relaxed', hint: '+50% time' },
@@ -15,7 +37,15 @@ export function SettingsPage(): React.JSX.Element {
   const update = useSettings((s) => s.update)
   const load = useSettings((s) => s.load)
   const [transferStatus, setTransferStatus] = useState<string | null>(null)
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus>({ phase: 'idle' })
+  const [version, setVersion] = useState('')
   const bridge = window.vectormind
+
+  useEffect(() => {
+    void bridge?.getAppInfo().then((info) => setVersion(info.version))
+    const unsubscribe = bridge?.onUpdateStatus(setUpdateStatus)
+    return unsubscribe
+  }, [bridge])
 
   const doExport = async (): Promise<void> => {
     if (!bridge) return
@@ -89,6 +119,28 @@ export function SettingsPage(): React.JSX.Element {
       </div>
       <div className="settings-row">
         <div className="info">
+          <div className="label">Simulation speed</div>
+          <div className="hint">
+            Accelerates aircraft motion in the radar work-samples so traffic crosses the sector
+            and hands off within a session. Higher = faster and busier. Does not change the session
+            length or your reaction time for radio/strip tasks.
+          </div>
+        </div>
+        <div className="seg">
+          {SIM_SPEEDS.map((v) => (
+            <button
+              key={v}
+              type="button"
+              className={settings.simSpeed === v ? 'active' : ''}
+              onClick={() => void update({ simSpeed: v })}
+            >
+              {v}×
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="settings-row">
+        <div className="info">
           <div className="label">Audio</div>
           <div className="hint">
             Spoken stimuli (number recall, later audio sub-tasks). When off, audio tasks show text
@@ -132,6 +184,31 @@ export function SettingsPage(): React.JSX.Element {
       {transferStatus && (
         <p style={{ color: 'var(--text-dim)', fontSize: '0.85rem' }}>{transferStatus}</p>
       )}
+      <div className="settings-row">
+        <div className="info">
+          <div className="label">Updates{version ? ` · v${version}` : ''}</div>
+          <div className="hint">
+            Check for a newer version. A found update downloads automatically; then restart to
+            install — no need to run a fresh installer by hand.
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            type="button"
+            className="btn"
+            disabled={!bridge || updateStatus.phase === 'checking' || updateStatus.phase === 'downloading'}
+            onClick={() => void bridge?.checkForUpdates()}
+          >
+            Check for updates
+          </button>
+          {updateStatus.phase === 'downloaded' && (
+            <button type="button" className="btn primary" onClick={() => void bridge?.installUpdate()}>
+              Restart &amp; install
+            </button>
+          )}
+        </div>
+      </div>
+      <p style={{ color: 'var(--text-dim)', fontSize: '0.85rem' }}>{updateLine(updateStatus)}</p>
       <p className="disclaimer">
         VectorMind is an independent practice tool, not affiliated with EUROCONTROL (FEAST),
         PANSA/PAŻP, SkyTest, or any test vendor. Practice scores are for training feedback only.

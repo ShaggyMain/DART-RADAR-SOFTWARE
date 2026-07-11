@@ -21,6 +21,7 @@ export function MultipassView({
   onFinish
 }: TaskViewProps<MpScenario>): React.JSX.Element {
   const audioEnabled = useSettings((s) => s.settings.audioEnabled)
+  const simSpeed = useSettings((s) => s.settings.simSpeed)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const simRef = useRef<MultipassSim | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
@@ -29,6 +30,8 @@ export function MultipassView({
   const [radioText, setRadioText] = useState<string | null>(null)
   const selectedRef = useRef<string | null>(null)
   selectedRef.current = selected
+  const simSpeedRef = useRef(simSpeed)
+  simSpeedRef.current = simSpeed
   const matchRef = useRef<() => void>(() => undefined)
   const useAudio = audioEnabled && speechAvailable()
 
@@ -95,7 +98,7 @@ export function MultipassView({
     const handle = startLoop({
       durationMs: scenario.durationMs,
       update: (dt, elapsed) => {
-        sim.step(dt)
+        sim.step(dt, simSpeedRef.current)
 
         if (pending && elapsed >= pending.deadlineMs) finalizePending()
         while (callCursor < scenario.calls.length && elapsed >= scenario.calls[callCursor].tMs) {
@@ -246,6 +249,7 @@ export function MultipassView({
             Conflicts {hud.conflicts}
           </span>
           <span>Landed {hud.landed}</span>
+          <span title="Simulation speed (change in Settings)">{simSpeed}×</span>
         </div>
         <div className="radio-box">
           {radioText ?? <span style={{ color: 'var(--text-dim)' }}>radio quiet</span>}
@@ -275,6 +279,12 @@ export function MultipassView({
           </button>
           <button type="button" className="btn" disabled={!selectedAc} onClick={() => cmd({ type: 'turn', deltaDeg: 30 })}>
             ⟳ 30°
+          </button>
+          <button type="button" className="btn" disabled={!selectedAc} onClick={() => cmd({ type: 'speed', deltaKts: 20 })}>
+            Spd +20
+          </button>
+          <button type="button" className="btn" disabled={!selectedAc} onClick={() => cmd({ type: 'speed', deltaKts: -20 })}>
+            Spd −20
           </button>
           <button
             type="button"

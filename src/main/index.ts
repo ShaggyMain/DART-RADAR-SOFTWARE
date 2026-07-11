@@ -2,8 +2,11 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { fileURLToPath } from 'url'
 import { registerIpcHandlers } from './ipc/register'
+import { setupUpdater } from './updater'
 
 const dirname = fileURLToPath(new URL('.', import.meta.url))
+
+let mainWindow: BrowserWindow | null = null
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -23,6 +26,10 @@ function createWindow(): void {
     }
   })
 
+  mainWindow = win
+  win.on('closed', () => {
+    if (mainWindow === win) mainWindow = null
+  })
   win.on('ready-to-show', () => win.show())
 
   // Open external links in the system browser, never in-app.
@@ -41,6 +48,7 @@ function createWindow(): void {
 
 void app.whenReady().then(() => {
   registerIpcHandlers(ipcMain)
+  setupUpdater(() => mainWindow)
   createWindow()
 
   app.on('activate', () => {

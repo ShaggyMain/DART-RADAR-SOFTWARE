@@ -21,6 +21,7 @@ export function RadarControlView({
   onFinish
 }: TaskViewProps<RcScenario>): React.JSX.Element {
   const audioEnabled = useSettings((s) => s.settings.audioEnabled)
+  const simSpeed = useSettings((s) => s.settings.simSpeed)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const simRef = useRef<RadarControlSim | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
@@ -29,6 +30,8 @@ export function RadarControlView({
   const [radioText, setRadioText] = useState<string | null>(null)
   const selectedRef = useRef<string | null>(null)
   selectedRef.current = selected
+  const simSpeedRef = useRef(simSpeed)
+  simSpeedRef.current = simSpeed
   const ackRef = useRef<() => void>(() => undefined)
   const useAudio = audioEnabled && speechAvailable()
 
@@ -99,7 +102,7 @@ export function RadarControlView({
     const handle = startLoop({
       durationMs: scenario.durationMs,
       update: (dt, elapsed) => {
-        sim.step(dt)
+        sim.step(dt, simSpeedRef.current)
 
         if (pending && elapsed >= pending.deadlineMs) finalizePending()
         while (callCursor < scenario.calls.length && elapsed >= scenario.calls[callCursor].tMs) {
@@ -250,6 +253,7 @@ export function RadarControlView({
             Conflicts {hud.conflicts}
           </span>
           <span>Exits {hud.exits}</span>
+          <span title="Simulation speed (change in Settings)">{simSpeed}×</span>
         </div>
         <div className="radio-box">
           {radioText ?? <span style={{ color: 'var(--text-dim)' }}>radio quiet</span>}
@@ -285,6 +289,12 @@ export function RadarControlView({
           </button>
           <button type="button" className="btn" disabled={!selectedAc} onClick={() => cmd({ type: 'altitude', deltaFl: -10 })}>
             Desc −10
+          </button>
+          <button type="button" className="btn" disabled={!selectedAc} onClick={() => cmd({ type: 'speed', deltaKts: 20 })}>
+            Spd +20
+          </button>
+          <button type="button" className="btn" disabled={!selectedAc} onClick={() => cmd({ type: 'speed', deltaKts: -20 })}>
+            Spd −20
           </button>
         </div>
         <div className="traffic-list">

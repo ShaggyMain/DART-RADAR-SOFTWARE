@@ -23,6 +23,10 @@ export type MpCommand =
   | { type: 'clear'; airport: Airport }
   | { type: 'turn'; deltaDeg: number }
   | { type: 'resume' }
+  | { type: 'speed'; deltaKts: number }
+
+export const MIN_SPEED_KTS = 140
+export const MAX_SPEED_KTS = 420
 
 /**
  * Live Multipass simulation (single flight level — lateral separation
@@ -68,6 +72,9 @@ export class MultipassSim {
     } else if (cmd.type === 'turn') {
       ac.targetHeadingDeg = (((ac.targetHeadingDeg + cmd.deltaDeg) % 360) + 360) % 360
       ac.vectored = true
+    } else if (cmd.type === 'speed') {
+      const next = Math.round((ac.speedKts + cmd.deltaKts) / 20) * 20
+      ac.speedKts = Math.min(MAX_SPEED_KTS, Math.max(MIN_SPEED_KTS, next))
     } else {
       ac.vectored = false
     }
@@ -88,9 +95,11 @@ export class MultipassSim {
     return this.scenario.airports.find((a) => a.id === id)!
   }
 
-  step(dtMs: number): void {
+  /** `moveScale` accelerates only aircraft motion (see DartSim.step). */
+  step(dtMs: number, moveScale = 1): void {
     this.elapsedMs += dtMs
     const s = this.scenario
+    const moveDt = dtMs * moveScale
 
     while (
       this.spawnCursor < s.spawns.length &&
@@ -118,7 +127,7 @@ export class MultipassSim {
       if (ac.clearedTo && !ac.vectored) {
         ac.targetHeadingDeg = headingToPoint(ac, this.airport(ac.clearedTo))
       }
-      stepAircraft(ac, dtMs)
+      stepAircraft(ac, moveDt)
 
       // REPORT lifecycle
       if (ac.clearedTo && ac.reportState === 'none') {

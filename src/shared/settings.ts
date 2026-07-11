@@ -13,17 +13,30 @@ export const TIMING_MULTIPLIER: Record<TimingPreset, number> = {
   strict: 0.75
 }
 
+/**
+ * Simulation speed multiplier for the real-time radar work-samples. It only
+ * accelerates AIRCRAFT MOTION (and turns/climbs), so traffic actually
+ * crosses the sector and hands off within a session — the session clock,
+ * spawns and audio reaction windows stay in real time. Higher = faster,
+ * busier, more demanding.
+ */
+export const SIM_SPEEDS = [1, 2, 4, 6, 8, 12] as const
+export type SimSpeed = (typeof SIM_SPEEDS)[number]
+
 export interface AppSettings {
   timingPreset: TimingPreset
   defaultDifficulty: Difficulty
   /** Enable spoken audio (TTS) in audio-based tasks. */
   audioEnabled: boolean
+  /** Aircraft-motion acceleration for radar simulations. */
+  simSpeed: SimSpeed
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
   timingPreset: 'realistic',
   defaultDifficulty: 2,
-  audioEnabled: true
+  audioEnabled: true,
+  simSpeed: 8
 }
 
 /** Keep only known keys with valid values — IPC patches are untrusted. */
@@ -42,6 +55,9 @@ export function sanitizeSettingsPatch(patch: unknown): Partial<AppSettings> {
   }
   if (typeof p.audioEnabled === 'boolean') {
     out.audioEnabled = p.audioEnabled
+  }
+  if (typeof p.simSpeed === 'number' && (SIM_SPEEDS as readonly number[]).includes(p.simSpeed)) {
+    out.simSpeed = p.simSpeed as SimSpeed
   }
   return out
 }

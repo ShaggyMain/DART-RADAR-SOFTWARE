@@ -9,6 +9,13 @@ directories:
 files:
   - out/**
 
+# Update feed: reads published GitHub Releases of this repo. Releases must be
+# public for the in-app updater to fetch them without a runtime token.
+publish:
+  provider: github
+  owner: ShaggyMain
+  repo: DART-RADAR-SOFTWARE
+
 # node:sqlite is built into Electron — no native modules to rebuild/unpack.
 npmRebuild: false
 

@@ -41,6 +41,35 @@ requires `wine` + `wine32`, and in restricted networks the mirror variables:
 `ELECTRON_MIRROR=https://registry.npmmirror.com/-/binary/electron/`
 `ELECTRON_BUILDER_BINARIES_MIRROR=https://registry.npmmirror.com/-/binary/electron-builder-binaries/`
 
+## Releasing & in-app updates
+
+The installed app has **Settings → Check for updates**, backed by
+`electron-updater` reading this repo's GitHub Releases. To ship a new version so
+installed apps can auto-update:
+
+1. bump `"version"` in `package.json` (e.g. `0.1.1`)
+2. `git commit -am "Release v0.1.1"`
+3. `git tag v0.1.1 && git push origin v0.1.1`
+
+The `.github/workflows/release.yml` Action then builds the Windows installer and
+publishes it — plus the `latest.yml` update feed — to a GitHub Release. No manual
+build or token setup is needed (the workflow uses the automatic `GITHUB_TOKEN`).
+
+> **The Releases must be public** for the updater to fetch them without embedding
+> a credential in the app. A private repo can still publish public releases, but
+> if releases are private the in-app updater won't reach them. The app is
+> unsigned, so each downloaded update run may show a Windows SmartScreen prompt
+> (click *More info → Run anyway*); updating still works.
+
+## Simulation speed (radar work-samples)
+
+A real 100 NM sector crossing at ~360 kt takes ~15 minutes, which never fits a
+few-minute session. **Settings → Simulation speed** (1×–12×, default 8×)
+accelerates only aircraft motion — turns and climbs included — so traffic
+actually crosses the sector and hands off within a session. The session clock,
+spawns and audio reaction windows stay in real time. Each radar sim also has a
+per-aircraft speed command (±20 kt) alongside the heading/altitude vectors.
+
 > In restricted networks the Electron binary download from GitHub may fail during
 > `npm install`. Re-run it with a mirror:
 > `ELECTRON_MIRROR="https://registry.npmmirror.com/-/binary/electron/" node node_modules/electron/install.js`

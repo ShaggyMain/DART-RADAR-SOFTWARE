@@ -23,6 +23,11 @@ export type DartCommand =
   | { type: 'turn'; deltaDeg: number }
   | { type: 'resume' }
   | { type: 'altitude'; deltaFl: number }
+  | { type: 'speed'; deltaKts: number }
+
+/** Player-adjustable speed envelope (kts). */
+export const MIN_SPEED_KTS = 160
+export const MAX_SPEED_KTS = 560
 
 /**
  * Live DART simulation. Fully deterministic given the scenario and the
@@ -68,15 +73,24 @@ export class DartSim {
       ac.vectored = true
     } else if (cmd.type === 'resume') {
       ac.vectored = false
-    } else {
+    } else if (cmd.type === 'altitude') {
       const next = Math.round((ac.targetAltitudeFl + cmd.deltaFl) / 10) * 10
       ac.targetAltitudeFl = Math.min(400, Math.max(60, next))
+    } else {
+      const next = Math.round((ac.speedKts + cmd.deltaKts) / 20) * 20
+      ac.speedKts = Math.min(MAX_SPEED_KTS, Math.max(MIN_SPEED_KTS, next))
     }
   }
 
-  step(dtMs: number): void {
+  /**
+   * Advance the sim. `moveScale` accelerates ONLY aircraft motion (position,
+   * turns, climbs) so traffic crosses the sector within a real-time session;
+   * spawns, handoffs, conflict timing and the session clock stay on real dt.
+   */
+  step(dtMs: number, moveScale = 1): void {
     this.elapsedMs += dtMs
     const s = this.scenario
+    const moveDt = dtMs * moveScale
 
     while (
       this.spawnCursor < s.spawns.length &&
@@ -104,7 +118,7 @@ export class DartSim {
       if (!ac.vectored && ac.route.length > 0) {
         ac.targetHeadingDeg = headingToPoint(ac, this.fixById.get(ac.route[0])!)
       }
-      stepAircraft(ac, dtMs)
+      stepAircraft(ac, moveDt)
 
       if (ac.route.length > 1) {
         const next = this.fixById.get(ac.route[0])!

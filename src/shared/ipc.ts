@@ -18,8 +18,22 @@ export const IPC = {
   resultsOverview: 'results:overview',
   skillsList: 'skills:list',
   dataExport: 'data:export',
-  dataImport: 'data:import'
+  dataImport: 'data:import',
+  updateCheck: 'update:check',
+  updateInstall: 'update:install',
+  updateEvent: 'update:event'
 } as const
+
+/** Auto-update status pushed from main → renderer on the updateEvent channel. */
+export type UpdateStatus =
+  | { phase: 'idle' }
+  | { phase: 'unsupported'; reason: string }
+  | { phase: 'checking' }
+  | { phase: 'available'; version: string }
+  | { phase: 'not-available'; version: string }
+  | { phase: 'downloading'; percent: number }
+  | { phase: 'downloaded'; version: string }
+  | { phase: 'error'; message: string }
 
 export type ExportResult =
   | { status: 'saved'; path: string; sessions: number }
@@ -46,4 +60,10 @@ export interface VectorMindApi {
   listSkillStates(): Promise<SkillStateRecord[]>
   exportData(): Promise<ExportResult>
   importData(): Promise<ImportResult>
+  /** Trigger an update check. Progress arrives via onUpdateStatus. */
+  checkForUpdates(): Promise<void>
+  /** Quit and install a downloaded update. */
+  installUpdate(): Promise<void>
+  /** Subscribe to update status changes; returns an unsubscribe function. */
+  onUpdateStatus(cb: (status: UpdateStatus) => void): () => void
 }
