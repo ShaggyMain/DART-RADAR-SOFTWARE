@@ -1,7 +1,7 @@
 {
   "name": "vectormind",
   "productName": "VectorMind",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "VectorMind — an independent desktop practice tool for air-traffic-controller aptitude skills. Not affiliated with EUROCONTROL (FEAST), PANSA or any test vendor.",
   "main": "./out/main/index.js",
   "type": "module",

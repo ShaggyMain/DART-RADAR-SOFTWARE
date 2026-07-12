@@ -83,6 +83,24 @@ export function hasHeadOnConflict(aircraft: ConflictAircraft[], tolDeg: number):
   return false
 }
 
+/**
+ * Screen projection shared with the View. Generators work in math coordinates
+ * (x east, y north / UP), but SVG's y axis points down. The View renders each
+ * heading as `rotate(headingDeg)` of an up-pointing glyph — a north-up compass
+ * convention — so the positions must be y-flipped to match. Flipping only the
+ * positions (or only the headings) mirrors every head-on pair vertically, which
+ * makes real conflicts render pointing apart and vice versa.
+ */
+export function toScreen(a: { x: number; y: number }): { x: number; y: number } {
+  return { x: a.x, y: FIELD - a.y }
+}
+
+/** Screen-space (y-down) unit vector a glyph points along at a compass heading. */
+export function headingUnit(headingDeg: number): { x: number; y: number } {
+  const r = (headingDeg * Math.PI) / 180
+  return { x: Math.sin(r), y: -Math.cos(r) }
+}
+
 function placePositions(rng: Rng, count: number): { x: number; y: number }[] {
   const pts: { x: number; y: number }[] = []
   let guard = 0

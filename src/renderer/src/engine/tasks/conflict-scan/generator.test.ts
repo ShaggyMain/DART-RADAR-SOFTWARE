@@ -1,6 +1,41 @@
 import { describe, expect, it } from 'vitest'
 import { DIFFICULTIES } from '@shared/types'
-import { generate, hasHeadOnConflict, score } from './generator'
+import {
+  generate,
+  hasHeadOnConflict,
+  headingUnit,
+  score,
+  toScreen,
+  type ConflictAircraft
+} from './generator'
+
+/** Angle (deg) between the direction a glyph points and the vector to (wx, wy). */
+function angleTo(u: { x: number; y: number }, wx: number, wy: number): number {
+  const wlen = Math.hypot(wx, wy) || 1
+  const dot = (u.x * wx + u.y * wy) / wlen
+  return (Math.acos(Math.max(-1, Math.min(1, dot))) * 180) / Math.PI
+}
+
+/** Do two aircraft point at each other AS DRAWN on screen (post-projection)? */
+function screenHeadOn(a: ConflictAircraft, b: ConflictAircraft, tol: number): boolean {
+  const pa = toScreen(a)
+  const pb = toScreen(b)
+  const abx = pb.x - pa.x
+  const aby = pb.y - pa.y
+  return (
+    angleTo(headingUnit(a.headingDeg), abx, aby) <= tol &&
+    angleTo(headingUnit(b.headingDeg), -abx, -aby) <= tol
+  )
+}
+
+function anyScreenHeadOn(aircraft: ConflictAircraft[], tol: number): boolean {
+  for (let i = 0; i < aircraft.length; i++) {
+    for (let j = i + 1; j < aircraft.length; j++) {
+      if (screenHeadOn(aircraft[i], aircraft[j], tol)) return true
+    }
+  }
+  return false
+}
 
 describe('conflict-scan generator', () => {
   it('is deterministic', () => {
@@ -19,6 +54,21 @@ describe('conflict-scan generator', () => {
     const s = generate('margin', d)
     for (const item of s.items.filter((i) => !i.conflict)) {
       expect(hasHeadOnConflict(item.aircraft, item.toleranceDeg * 2)).toBe(false)
+    }
+  })
+
+  // Guards the View: math coords are y-up but SVG is y-down, so positions are
+  // flipped before drawing. If that flip and the heading rotation disagree,
+  // every head-on pair renders vertically mirrored (looks like the opposite
+  // answer). The on-screen picture must match the stored ground truth.
+  it.each(DIFFICULTIES)('difficulty %i: on-screen geometry matches ground truth', (d) => {
+    const s = generate('screen', d)
+    for (const item of s.items) {
+      expect(anyScreenHeadOn(item.aircraft, item.toleranceDeg)).toBe(item.conflict)
+      if (!item.conflict) {
+        // No accidental convergence even at 2x tolerance (matches the margin rule).
+        expect(anyScreenHeadOn(item.aircraft, item.toleranceDeg * 2)).toBe(false)
+      }
     }
   })
 

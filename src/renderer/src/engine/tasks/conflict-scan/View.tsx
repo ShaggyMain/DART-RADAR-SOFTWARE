@@ -6,6 +6,7 @@ import type { TaskViewProps } from '../taskView'
 import {
   CONFLICT_OPTIONS,
   score,
+  toScreen,
   type ConflictItem,
   type ConflictScanScenario
 } from './generator'
@@ -17,11 +18,16 @@ function FieldSvg({ item }: { item: ConflictItem }): React.JSX.Element {
   return (
     <svg width={VIEW} height={VIEW} viewBox={`0 0 ${VIEW} ${VIEW}`}>
       <rect x={0} y={0} width={VIEW} height={VIEW} fill="var(--bg)" rx={8} />
-      {item.aircraft.map((a, i) => (
-        <g key={i} transform={`translate(${a.x * s}, ${a.y * s}) rotate(${a.headingDeg})`}>
-          <polygon points="0,-9 6,8 0,4 -6,8" fill="var(--accent)" />
-        </g>
-      ))}
+      {item.aircraft.map((a, i) => {
+        // Math coords are y-up; SVG is y-down. Flip position so it agrees with
+        // the compass heading (rendered as rotate() of an up-pointing glyph).
+        const p = toScreen(a)
+        return (
+          <g key={i} transform={`translate(${p.x * s}, ${p.y * s}) rotate(${a.headingDeg})`}>
+            <polygon points="0,-9 6,8 0,4 -6,8" fill="var(--accent)" />
+          </g>
+        )
+      })}
     </svg>
   )
 }
