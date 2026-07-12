@@ -161,11 +161,22 @@ export function allOrientations(base: CubeMap<SymbolId>): CubeMap<SymbolId>[] {
 
 const viewKey = (v: CubeView): string => `${v.front}|${v.right}|${v.top}`
 
+/**
+ * The (front, right, top) triple visible when a cube orientation is drawn in the
+ * standard corner view. The net is drawn x-east / y-south and folded away from
+ * the viewer, so when the S face is toward you and U is up, the face on your
+ * RIGHT is the WEST face of the roll frame (verified against hand-folded nets).
+ * Reading E here instead of W produces a left-right mirror image of every cube.
+ */
+function cornerView(m: CubeMap<SymbolId>): CubeView {
+  return { front: m.S, right: m.W, top: m.U }
+}
+
 /** Every (front, right, top) triple visible in some orientation. */
 export function validViews(base: CubeMap<SymbolId>): Set<string> {
   const set = new Set<string>()
   for (const m of allOrientations(base)) {
-    set.add(viewKey({ front: m.S, right: m.E, top: m.U }))
+    set.add(viewKey(cornerView(m)))
   }
   return set
 }
@@ -323,7 +334,7 @@ function makeItem(rng: Rng, cfg: Config): CubeFoldingItem {
     const valid = validViews(base)
     const orientations = allOrientations(base)
     const chosen = rng.pick(orientations)
-    const correct: CubeView = { front: chosen.S, right: chosen.E, top: chosen.U }
+    const correct: CubeView = cornerView(chosen)
 
     const distractors = makeDistractors(
       rng,

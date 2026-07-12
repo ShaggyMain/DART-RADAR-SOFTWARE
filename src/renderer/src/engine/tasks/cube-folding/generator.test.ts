@@ -96,6 +96,31 @@ describe('allOrientations / validViews', () => {
   })
 })
 
+describe('cube-folding chirality (matches a real fold, not its mirror)', () => {
+  // Ground truth by hand: net drawn x-east / y-south, folded away from the
+  // viewer with symbols outside. Holding a face toward you, the neighbour on
+  // your screen-RIGHT (east) becomes the cube's RIGHT face. Reading the mirror
+  // instead was the bug that marked the correct cube wrong.
+  const syms: SymbolId[] = ['circle', 'ring', 'square', 'frame', 'diamond', 'cross']
+
+  it('cross net: right face is the east neighbour', () => {
+    // A=circle B=ring C=square D=frame E(west)=diamond F(east)=cross
+    const net: [number, number][] = [[1, 0], [1, 1], [1, 2], [1, 3], [0, 1], [2, 1]]
+    const valid = validViews(foldNet(net, syms)!)
+    // hold B(ring) front, A(circle) up -> right must be the east neighbour F(cross)
+    expect(valid.has('ring|cross|circle')).toBe(true)
+    expect(valid.has('ring|diamond|circle')).toBe(false) // the mirror
+  })
+
+  it('T net: right face is the east neighbour', () => {
+    // column A-B-C-D with E(west),F(east) beside A; hold A front, D up
+    const net: [number, number][] = [[1, 0], [1, 1], [1, 2], [1, 3], [0, 0], [2, 0]]
+    const valid = validViews(foldNet(net, syms)!)
+    expect(valid.has('circle|cross|frame')).toBe(true)
+    expect(valid.has('circle|diamond|frame')).toBe(false)
+  })
+})
+
 describe('cube-folding generator', () => {
   it('is deterministic', () => {
     expect(generate('s', 3)).toEqual(generate('s', 3))
