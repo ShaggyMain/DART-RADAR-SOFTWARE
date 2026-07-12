@@ -97,8 +97,8 @@ export const TASKS: TaskEntry[] = [
     category: 'attention',
     shortDesc: 'Shapes, arithmetic and sound cues — all at once.',
     instructions: [
-      'Three streams run at the same time: two figures (press F when identical), an equation (press J if true, K if false), and sporadic beeps (press L when you hear one).',
-      'Every equation must be answered; figures only need a key when they MATCH.',
+      'Three streams run at the same time: two figures (press H when identical), an equation (press J if true, K if false), and sporadic beeps (press L when you hear one). Each panel also has on-screen buttons you can click instead of the keys.',
+      'Every equation must be answered; figures only need an input when they MATCH.',
       'At difficulty 1 the sound stream is off; from difficulty 2 all three run together.'
     ],
     extraLabels: {
@@ -142,7 +142,7 @@ export const TASKS: TaskEntry[] = [
     category: 'spatial',
     shortDesc: "Left/right judgement from another person's perspective.",
     instructions: [
-      'A figure appears facing toward you or away from you, sometimes rotated.',
+      'A figure appears facing toward you or away from you (shown by its face vs. its back, and labelled under the figure), sometimes rotated.',
       'One shape is next to each hand. Decide in which of the FIGURE’S OWN hands the asked shape is — not yours.',
       'When the figure faces you, its right hand is on your left. Use the ← and → arrow keys or click.'
     ],

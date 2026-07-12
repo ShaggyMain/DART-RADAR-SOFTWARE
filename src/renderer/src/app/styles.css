@@ -215,11 +215,64 @@ h2 {
   border-color: var(--accent);
 }
 
+.mc-option:disabled {
+  cursor: default;
+}
+
+/* Practice feedback reveal */
+.mc-option.correct {
+  border-color: var(--good);
+  box-shadow: 0 0 0 2px var(--good) inset;
+}
+
+.mc-option.wrong {
+  border-color: var(--bad);
+  box-shadow: 0 0 0 2px var(--bad) inset;
+}
+
+.reveal-note {
+  margin: 14px 0 0;
+  font-weight: 600;
+  color: var(--text);
+}
+
 .mc-option .keyhint {
   display: block;
   color: var(--text-dim);
   font-size: 0.7rem;
   margin-top: 6px;
+}
+
+/* Multi Attention on-screen input buttons */
+.ma-btn {
+  margin-top: auto;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 14px;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: border-color 0.1s, background 0.1s;
+}
+
+.ma-btn:hover {
+  border-color: var(--accent);
+}
+
+.ma-btn:active {
+  background: var(--bg-raised);
+}
+
+.ma-btn .ma-key {
+  display: inline-block;
+  margin-left: 6px;
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 0 5px;
 }
 
 /* Task session layout */

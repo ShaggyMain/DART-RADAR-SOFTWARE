@@ -68,15 +68,23 @@ function CubeSvg({ view }: { view: CubeView }): React.JSX.Element {
 export function CubeFoldingView({
   scenario,
   timingMultiplier,
+  feedback,
   onFinish
 }: TaskViewProps<CubeFoldingScenario>): React.JSX.Element | null {
   const runner = useItemRunner({
     items: scenario.items,
     timeLimitOf: (i) => i.timeLimitMs * timingMultiplier,
+    feedbackMs: feedback ? 1600 : 0,
     onFinish: (responses) => onFinish(score(scenario, responses))
   })
   const item = runner.current
   if (!item) return null
+
+  const reveal = runner.reveal
+  const markClass = reveal
+    ? (i: number): string | undefined =>
+        i === item.correctIndex ? 'correct' : i === reveal.answerIndex ? 'wrong' : undefined
+    : undefined
 
   return (
     <div className="session">
@@ -95,7 +103,16 @@ export function CubeFoldingView({
           <CubeSvg key={i} view={v} />
         ))}
         onSelect={runner.answer}
+        disabled={!!reveal}
+        markClass={markClass}
       />
+      {reveal && (
+        <p className="reveal-note">
+          {reveal.answerIndex === item.correctIndex
+            ? '✓ Correct — that cube folds from the net.'
+            : `✗ Cube ${item.correctIndex + 1} is the one that folds. The others show a mirror image or an opposite face.`}
+        </p>
+      )}
     </div>
   )
 }

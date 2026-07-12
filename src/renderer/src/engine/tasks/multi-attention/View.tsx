@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { GlyphSvg } from '@renderer/components/GlyphSvg'
 import { startLoop } from '@renderer/engine/core/gameLoop'
 import { useSettings } from '@renderer/state/settings'
@@ -7,6 +7,7 @@ import {
   score,
   type EquationStim,
   type MAEvent,
+  type MAKey,
   type MultiAttentionScenario,
   type ShapeStim
 } from './generator'
@@ -33,26 +34,31 @@ export function MultiAttentionView({
   const [shape, setShape] = useState<ShapeStim | null>(null)
   const [equation, setEquation] = useState<EquationStim | null>(null)
   const [beepFlash, setBeepFlash] = useState(false)
+  const [pressed, setPressed] = useState<MAKey | null>(null)
   const eventsRef = useRef<MAEvent[]>([])
+  const elapsedRef = useRef(0)
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
+  // Both keys and mouse clicks funnel through here so they share one timeline.
+  const pushEvent = useCallback((key: MAKey) => {
+    eventsRef.current.push({ tMs: elapsedRef.current, key })
+    setPressed(key)
+    clearTimeout(pressTimer.current)
+    pressTimer.current = setTimeout(() => setPressed(null), 160)
+  }, [])
 
   useEffect(() => {
     let audioCtx: AudioContext | null = null
     let beepCursor = 0
-    let elapsedNow = 0
     let lastShape: ShapeStim | null = null
     let lastEquation: EquationStim | null = null
 
     const onKey = (e: KeyboardEvent): void => {
-      const key = e.key.toLowerCase()
-      const map: Record<string, MAEvent['key']> = {
-        f: 'match',
-        j: 'true',
-        k: 'false',
-        l: 'beep'
-      }
-      if (map[key]) {
+      const map: Record<string, MAKey> = { h: 'match', j: 'true', k: 'false', l: 'beep' }
+      const key = map[e.key.toLowerCase()]
+      if (key) {
         e.preventDefault()
-        eventsRef.current.push({ tMs: elapsedNow, key: map[key] })
+        pushEvent(key)
       }
     }
     window.addEventListener('keydown', onKey)
@@ -60,7 +66,7 @@ export function MultiAttentionView({
     const handle = startLoop({
       durationMs: scenario.durationMs,
       update: (_dt, elapsed) => {
-        elapsedNow = elapsed
+        elapsedRef.current = elapsed
         setRemainingMs(Math.max(0, scenario.durationMs - elapsed))
 
         const currentShape =
@@ -98,6 +104,7 @@ export function MultiAttentionView({
 
     return () => {
       window.removeEventListener('keydown', onKey)
+      clearTimeout(pressTimer.current)
       void audioCtx?.close()
       handle.stop()
     }
@@ -105,21 +112,26 @@ export function MultiAttentionView({
   }, [scenario, audioEnabled])
 
   const hasBeeps = scenario.beeps.length > 0
+  const panelBase: React.CSSProperties = { minHeight: 240, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }
+  const flash = (key: MAKey): React.CSSProperties =>
+    pressed === key ? { outline: '2px solid var(--accent)', outlineOffset: 2 } : {}
+
   return (
     <div className="session" style={{ maxWidth: 1000 }}>
       <div className="progress">
-        F = figures match · J = equation TRUE · K = equation FALSE
+        H = figures match · J = equation TRUE · K = equation FALSE
         {hasBeeps ? ' · L = sound heard' : ''} · {Math.ceil(remainingMs / 1000)}s left
       </div>
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: hasBeeps ? '1fr 1fr 0.6fr' : '1fr 1fr',
+          gridTemplateColumns: hasBeeps ? '1fr 1fr 0.7fr' : '1fr 1fr',
           gap: 16
         }}
       >
-        <div className="stimulus-box" style={{ minHeight: 220 }}>
-          <div style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>FIGURES (F if same)</div>
+        {/* FIGURES — click / H if the two figures match */}
+        <div className="stimulus-box" style={{ ...panelBase, ...flash('match') }}>
+          <div style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>FIGURES</div>
           {shape ? (
             <div style={{ display: 'flex', gap: 26 }}>
               <GlyphSvg glyph={shape.left} cell={15} />
@@ -128,20 +140,35 @@ export function MultiAttentionView({
           ) : (
             <span style={{ color: 'var(--text-dim)' }}>—</span>
           )}
+          <button type="button" className="ma-btn" onClick={() => pushEvent('match')}>
+            Same <span className="ma-key">H</span>
+          </button>
         </div>
-        <div className="stimulus-box" style={{ minHeight: 220 }}>
-          <div style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>
-            EQUATION (J true / K false)
-          </div>
+
+        {/* EQUATION — click TRUE / FALSE (J / K) */}
+        <div
+          className="stimulus-box"
+          style={{ ...panelBase, ...flash('true'), ...flash('false') }}
+        >
+          <div style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>EQUATION</div>
           {equation ? (
             <span style={{ fontSize: '1.9rem', fontWeight: 700 }}>{equation.text}</span>
           ) : (
             <span style={{ color: 'var(--text-dim)' }}>—</span>
           )}
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button type="button" className="ma-btn" onClick={() => pushEvent('true')}>
+              True <span className="ma-key">J</span>
+            </button>
+            <button type="button" className="ma-btn" onClick={() => pushEvent('false')}>
+              False <span className="ma-key">K</span>
+            </button>
+          </div>
         </div>
+
         {hasBeeps && (
-          <div className="stimulus-box" style={{ minHeight: 220 }}>
-            <div style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>SOUND (L on beep)</div>
+          <div className="stimulus-box" style={{ ...panelBase, ...flash('beep') }}>
+            <div style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>SOUND</div>
             <div
               style={{
                 width: 54,
@@ -157,6 +184,9 @@ export function MultiAttentionView({
                 audio off — watch the circle
               </div>
             )}
+            <button type="button" className="ma-btn" onClick={() => pushEvent('beep')}>
+              Beep <span className="ma-key">L</span>
+            </button>
           </div>
         )}
       </div>

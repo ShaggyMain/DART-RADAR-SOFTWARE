@@ -125,6 +125,7 @@ export function TaskPage(): React.JSX.Element {
         key={seed}
         scenario={scenario}
         timingMultiplier={timingMultiplier}
+        feedback
         onFinish={(result) => finishRun(seed, result)}
       />
     )

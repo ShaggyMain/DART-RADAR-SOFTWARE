@@ -6,6 +6,14 @@ interface UseItemRunnerArgs<T> {
   /** Per-item time limit in ms (already timing-preset scaled); Infinity = untimed. */
   timeLimitOf: (item: T) => number
   onFinish: (responses: ItemResponse[]) => void
+  /**
+   * Practice feedback: after each answer, pause on the item for this many ms
+   * so the view can reveal the correct choice, then advance. 0 (default) keeps
+   * the original instant-advance behaviour. Reaction times are measured at the
+   * moment of answering, so the pause never inflates them, and the countdown is
+   * frozen during the reveal.
+   */
+  feedbackMs?: number
 }
 
 interface ItemRunner<T> {
@@ -16,6 +24,8 @@ interface ItemRunner<T> {
   totalMs: number
   answer: (answerIndex: number | null) => void
   finished: boolean
+  /** Non-null while a feedback reveal is showing the just-answered item. */
+  reveal: { answerIndex: number | null } | null
 }
 
 const TICK_MS = 100
@@ -27,10 +37,12 @@ const TICK_MS = 100
 export function useItemRunner<T>({
   items,
   timeLimitOf,
-  onFinish
+  onFinish,
+  feedbackMs = 0
 }: UseItemRunnerArgs<T>): ItemRunner<T> {
   const [index, setIndex] = useState(0)
   const [finished, setFinished] = useState(items.length === 0)
+  const [reveal, setReveal] = useState<{ answerIndex: number | null } | null>(null)
   const current = finished ? null : items[index]
   const totalMs = current ? timeLimitOf(current) : 0
   const [remainingMs, setRemainingMs] = useState(totalMs)
@@ -39,31 +51,43 @@ export function useItemRunner<T>({
   const startRef = useRef(performance.now())
   const onFinishRef = useRef(onFinish)
   onFinishRef.current = onFinish
+  const revealTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
-  const advance = useCallback(
+  const goNext = useCallback(() => {
+    setReveal(null)
+    if (responsesRef.current.length >= items.length) {
+      setFinished(true)
+      onFinishRef.current(responsesRef.current)
+    } else {
+      startRef.current = performance.now()
+      setIndex((i) => i + 1)
+    }
+  }, [items.length])
+
+  const commit = useCallback(
     (response: ItemResponse) => {
       responsesRef.current.push(response)
-      if (responsesRef.current.length >= items.length) {
-        setFinished(true)
-        onFinishRef.current(responsesRef.current)
+      if (feedbackMs > 0) {
+        setReveal({ answerIndex: response.answerIndex })
+        revealTimer.current = setTimeout(goNext, feedbackMs)
       } else {
-        startRef.current = performance.now()
-        setIndex((i) => i + 1)
+        goNext()
       }
     },
-    [items.length]
+    [feedbackMs, goNext]
   )
 
   const answer = useCallback(
     (answerIndex: number | null) => {
-      if (responsesRef.current.length > index || finished) return
-      advance({ answerIndex, rtMs: performance.now() - startRef.current })
+      if (responsesRef.current.length > index || finished || reveal) return
+      commit({ answerIndex, rtMs: performance.now() - startRef.current })
     },
-    [advance, index, finished]
+    [commit, index, finished, reveal]
   )
 
   useEffect(() => {
-    if (finished || !Number.isFinite(totalMs)) return
+    // Freeze the countdown during a reveal so feedback never eats the next item.
+    if (finished || reveal || !Number.isFinite(totalMs)) return
     setRemainingMs(totalMs)
     const interval = setInterval(() => {
       const elapsed = performance.now() - startRef.current
@@ -72,14 +96,16 @@ export function useItemRunner<T>({
         clearInterval(interval)
         setRemainingMs(0)
         if (responsesRef.current.length <= index) {
-          advance({ answerIndex: null, rtMs: totalMs })
+          commit({ answerIndex: null, rtMs: totalMs })
         }
       } else {
         setRemainingMs(remaining)
       }
     }, TICK_MS)
     return () => clearInterval(interval)
-  }, [index, finished, totalMs, advance])
+  }, [index, finished, reveal, totalMs, commit])
 
-  return { index, total: items.length, current, remainingMs, totalMs, answer, finished }
+  useEffect(() => () => clearTimeout(revealTimer.current), [])
+
+  return { index, total: items.length, current, remainingMs, totalMs, answer, finished, reveal }
 }
