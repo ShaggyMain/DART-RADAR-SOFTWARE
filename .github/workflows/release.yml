@@ -35,6 +35,19 @@ jobs:
 
       - run: npm test
 
+      # Manual runs have no tag yet, but a published release requires one —
+      # create and push it here (runner token has contents:write).
+      - name: Ensure version tag exists (manual runs)
+        if: github.event_name == 'workflow_dispatch'
+        shell: pwsh
+        run: |
+          $v = node -p "require('./package.json').version"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "v$v" 2>$null
+          git push origin "v$v" 2>$null
+          exit 0
+
       - name: Build and publish installer
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
