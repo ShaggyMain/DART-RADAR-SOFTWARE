@@ -1,20 +1,16 @@
 name: Release
 
 # Builds the Windows installer and publishes it (plus latest.yml for the
-# in-app auto-updater) to a GitHub Release whenever a version tag is pushed.
+# in-app auto-updater) to a GitHub Release.
 #
-#   1. bump "version" in package.json (e.g. 0.1.1)
-#   2. git commit -am "Release v0.1.1"
-#   3. git tag v0.1.1 && git push origin v0.1.1
-#
-# The installed app's "Check for updates" then finds the new release.
+# Trigger it from the Actions tab (Run workflow) — it builds the version
+# currently in package.json. The installed app's "Check for updates" then
+# finds the new release.
 
 on:
   push:
     tags:
       - 'v*'
-  # Manual trigger: builds the version currently in package.json and
-  # publishes it as a full release (electron-builder creates the tag).
   workflow_dispatch:
 
 permissions:
@@ -35,17 +31,34 @@ jobs:
 
       - run: npm test
 
-      # Manual runs have no tag yet, but a published release requires one —
-      # create and push it here (runner token has contents:write).
-      - name: Ensure version tag exists (manual runs)
+      # Publishing multiple files with electron-builder's "always" mode used to
+      # race: two parallel uploads each created a GitHub release for the tag, so
+      # the installer, blockmap and latest.yml were split across TWO releases and
+      # the one the updater reads as "latest" had no latest.yml (404 on update).
+      #
+      # Fix: delete every existing release for this tag, move the tag to the
+      # current commit, and pre-create ONE release. electron-builder then finds
+      # that release and uploads all assets into it instead of creating its own.
+      # (Pushes using the automatic GITHUB_TOKEN don't re-trigger this workflow.)
+      - name: Prepare a single clean release (manual runs)
         if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: pwsh
         run: |
+          $repo = "${{ github.repository }}"
           $v = node -p "require('./package.json').version"
+          $tag = "v$v"
+          $ids = gh api "repos/$repo/releases" --paginate --jq ".[] | select(.tag_name==`"$tag`") | .id"
+          foreach ($id in ($ids -split "`n")) {
+            $id = $id.Trim()
+            if ($id) { gh api -X DELETE "repos/$repo/releases/$id"; Write-Host "deleted stale release $id" }
+          }
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag "v$v" 2>$null
-          git push origin "v$v" 2>$null
+          git tag -f $tag
+          git push -f origin $tag
+          gh release create $tag --title $v --notes "VectorMind $v" --target $env:GITHUB_SHA
           exit 0
 
       - name: Build and publish installer
