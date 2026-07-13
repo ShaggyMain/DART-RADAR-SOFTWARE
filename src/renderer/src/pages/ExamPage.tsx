@@ -5,10 +5,11 @@ import { TASKS_BY_ID } from '@renderer/engine/tasks/registry'
 import type { TaskViewProps } from '@renderer/engine/tasks/taskView'
 import { useSettings } from '@renderer/state/settings'
 import {
-  BLUEPRINTS,
   BREAK_MIN_S,
   BREAK_TOTAL_S,
   EXAM_DIFFICULTY,
+  EXAM_OPTIONS,
+  blueprintFor,
   moduleStanine,
   overallStanine,
   type ExamBlueprint,
@@ -71,10 +72,10 @@ export function ExamPage(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.kind])
 
-  const startExam = (bp: ExamBlueprint): void => {
+  const startExam = (id: 'short' | 'full'): void => {
     outcomesRef.current = []
     examIdRef.current = Date.now().toString(36)
-    setBlueprint(bp)
+    setBlueprint(blueprintFor(id))
     setState({ kind: 'module-intro', block: 0, module: 0 })
   }
 
@@ -120,9 +121,10 @@ export function ExamPage(): React.JSX.Element {
         <h1>Exam simulation</h1>
         <div className="stimulus-box" style={{ alignItems: 'flex-start', textAlign: 'left' }}>
           <p style={{ margin: 0, lineHeight: 1.6 }}>
-            Modules run back-to-back in a fixed order at difficulty {EXAM_DIFFICULTY}, with short
-            mandatory breaks between blocks. You get NO feedback until the end — then a normalised,
-            stanine-style summary (1–9) of every module.
+            Modules run back-to-back at difficulty {EXAM_DIFFICULTY}, with short mandatory breaks
+            between blocks. You get NO feedback until the end — then a normalised, stanine-style
+            summary (1–9) of every module. The Short exam reshuffles which module represents each
+            area every run.
           </p>
           <p style={{ margin: 0, lineHeight: 1.6, color: 'var(--text-dim)', fontSize: '0.85rem' }}>
             The summary compares you against your own practice history (or a built-in practice
@@ -131,8 +133,8 @@ export function ExamPage(): React.JSX.Element {
           </p>
         </div>
         <div className="btn-row" style={{ justifyContent: 'center' }}>
-          {BLUEPRINTS.map((bp) => (
-            <button key={bp.id} type="button" className="task-card" style={{ maxWidth: 300 }} onClick={() => startExam(bp)}>
+          {EXAM_OPTIONS.map((bp) => (
+            <button key={bp.id} type="button" className="task-card" style={{ maxWidth: 300 }} onClick={() => startExam(bp.id)}>
               <div className="name">
                 {bp.name} · ~{bp.approxMinutes} min
               </div>

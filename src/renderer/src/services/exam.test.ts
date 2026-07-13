@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import type { TaskResult } from '@shared/types'
-import { BLUEPRINTS, moduleStanine, overallStanine } from './exam'
+import type { TaskId, TaskResult } from '@shared/types'
+import { EXAM_POOLS, FULL_EXAM, buildShortExam, moduleStanine, overallStanine } from './exam'
 import { TASKS_BY_ID } from '../engine/tasks/registry'
+
+const modulesOf = (bp: { blocks: { modules: TaskId[] }[] }): TaskId[] =>
+  bp.blocks.flatMap((b) => b.modules)
 
 function result(accuracy: number): TaskResult {
   return {
@@ -15,20 +18,42 @@ function result(accuracy: number): TaskResult {
 }
 
 describe('exam blueprints', () => {
-  it('reference only registered task ids', () => {
-    for (const bp of BLUEPRINTS) {
-      for (const block of bp.blocks) {
-        for (const taskId of block.modules) {
-          expect(TASKS_BY_ID.has(taskId)).toBe(true)
-        }
-      }
+  it('all pools and the full exam reference only registered task ids', () => {
+    const all = [...Object.values(EXAM_POOLS).flat(), ...modulesOf(FULL_EXAM), 'planning', 'english-listening']
+    for (const taskId of all as TaskId[]) {
+      expect(TASKS_BY_ID.has(taskId)).toBe(true)
     }
   })
 
-  it('short exam is a strict subset in size', () => {
-    const count = (id: 'short' | 'full'): number =>
-      BLUEPRINTS.find((b) => b.id === id)!.blocks.reduce((n, bl) => n + bl.modules.length, 0)
-    expect(count('short')).toBeLessThan(count('full'))
+  it('pools match their registered categories', () => {
+    const catOf = (id: TaskId): string | undefined => TASKS_BY_ID.get(id)?.category
+    for (const id of EXAM_POOLS.attention) expect(catOf(id)).toBe('attention')
+    for (const id of EXAM_POOLS.memory) expect(catOf(id)).toBe('memory')
+    for (const id of EXAM_POOLS.spatial) expect(catOf(id)).toBe('spatial')
+    for (const id of EXAM_POOLS.simulation) expect(catOf(id)).toBe('simulation')
+  })
+
+  it('short exam has six modules covering every required area', () => {
+    // deterministic pick = first of each pool
+    const bp = buildShortExam((arr) => arr[0])
+    const mods = modulesOf(bp)
+    expect(mods).toHaveLength(6)
+    expect(mods).toContain('planning') // Landing Sequence
+    expect(mods).toContain('english-listening')
+    expect(EXAM_POOLS.attention).toContain(mods.find((m) => EXAM_POOLS.attention.includes(m))!)
+    expect(EXAM_POOLS.memory).toContain(mods.find((m) => EXAM_POOLS.memory.includes(m))!)
+    expect(EXAM_POOLS.spatial).toContain(mods.find((m) => EXAM_POOLS.spatial.includes(m))!)
+    expect(EXAM_POOLS.simulation).toContain(mods.find((m) => EXAM_POOLS.simulation.includes(m))!)
+  })
+
+  it('short exam varies its picks across runs', () => {
+    // Default random picker: many builds must not all be identical.
+    const combos = new Set(Array.from({ length: 40 }, () => modulesOf(buildShortExam()).join(',')))
+    expect(combos.size).toBeGreaterThan(1)
+  })
+
+  it('short exam is smaller than the full exam', () => {
+    expect(modulesOf(buildShortExam((arr) => arr[0])).length).toBeLessThan(modulesOf(FULL_EXAM).length)
   })
 })
 
