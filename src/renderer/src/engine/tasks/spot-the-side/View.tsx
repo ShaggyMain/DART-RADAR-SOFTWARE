@@ -4,6 +4,7 @@ import { useItemRunner } from '@renderer/engine/core/useItemRunner'
 import type { TaskViewProps } from '../taskView'
 import {
   SIDE_OPTIONS,
+  isProfile,
   score,
   type SideShape,
   type SpotSideItem,
@@ -35,75 +36,127 @@ function Shape({
   }
 }
 
-/**
- * A person seen from the FRONT (facing you: a face, an open collar and shirt
- * buttons) or from the BACK (turned away: no face, a nape of hair and a spine
- * seam). The whole figure is then rotated. Facing 'toward' mirrors the hands —
- * the figure's right hand appears on the viewer's left.
- */
-function FigureSvg({ item }: { item: SpotSideItem }): React.JSX.Element {
-  const toward = item.facing === 'toward'
-  const facingSign = toward ? -1 : 1
-  const handSign = item.correctHand === 'right' ? 1 : -1
-  const targetX = handSign * facingSign * 64
-  const line = { stroke: 'var(--text)', strokeWidth: 5, strokeLinecap: 'round' as const }
-  const head = toward ? 'var(--bg-raised)' : 'var(--text)'
+// Original flat-style person, drawn in three poses. Colors are fixed (not
+// theme variables) so the figure reads as a person on any background.
+const SKIN = '#e6b48c'
+const HAIR = '#2b241e'
+const SHIRT = '#7d97b5'
+const SHIRT_EDGE = '#5c748f'
+const TROUSERS = '#5d6675'
+const DARK = '#23272f'
 
+/** Front view: face, tie and buttons — unmistakably looking at you. */
+function FrontFigure({ item }: { item: SpotSideItem }): React.JSX.Element {
+  const handSign = item.correctHand === 'right' ? 1 : -1
+  const targetX = handSign * -1 * 84 // facing you: their right is on your left
   return (
-    <svg width={240} height={240} viewBox="-120 -120 240 240" aria-label="Person figure">
+    <g>
+      {/* arms (T-pose) + hands */}
+      <rect x={-56} y={-36} width={112} height={9} rx={4.5} fill={SHIRT} stroke={SHIRT_EDGE} />
+      <circle cx={-60} cy={-31} r={6} fill={SKIN} />
+      <circle cx={60} cy={-31} r={6} fill={SKIN} />
+      {/* torso */}
+      <path d="M -26 -40 L 26 -40 L 21 28 L -21 28 Z" fill={SHIRT} stroke={SHIRT_EDGE} />
+      {/* tie */}
+      <path d="M -6 -40 L 6 -40 L 0 -30 Z" fill="var(--accent)" />
+      <path d="M -3 -31 L 3 -31 L 5 6 L 0 14 L -5 6 Z" fill="var(--accent)" />
+      {/* belt, trousers, shoes */}
+      <rect x={-21} y={28} width={42} height={6} fill={DARK} />
+      <path d="M -20 34 L -4 34 L -6 74 L -19 74 Z" fill={TROUSERS} />
+      <path d="M 20 34 L 4 34 L 6 74 L 19 74 Z" fill={TROUSERS} />
+      <ellipse cx={-13} cy={78} rx={10} ry={4.5} fill={DARK} />
+      <ellipse cx={13} cy={78} rx={10} ry={4.5} fill={DARK} />
+      {/* neck + head with a clear face */}
+      <rect x={-5} y={-48} width={10} height={9} fill={SKIN} />
+      <circle cx={0} cy={-64} r={20} fill={SKIN} />
+      <path d="M -20 -66 A 20 20 0 0 1 20 -66 L 20 -72 A 20 20 0 0 0 -20 -72 Z" fill={HAIR} />
+      <path d="M -20 -66 Q -20 -78 -8 -83 Q -20 -80 -20 -66 Z" fill={HAIR} />
+      <circle cx={-7} cy={-64} r={2.6} fill={DARK} />
+      <circle cx={7} cy={-64} r={2.6} fill={DARK} />
+      <path d="M -6 -54 Q 0 -49 6 -54" stroke={DARK} strokeWidth={2.2} fill="none" />
+      {/* shapes next to each hand */}
+      <Shape shape={item.targetShape} x={targetX} y={-31} />
+      <Shape shape={item.otherShape} x={-targetX} y={-31} />
+    </g>
+  )
+}
+
+/** Back view: hair covers the whole head — no face, plain shirt back. */
+function BackFigure({ item }: { item: SpotSideItem }): React.JSX.Element {
+  const handSign = item.correctHand === 'right' ? 1 : -1
+  const targetX = handSign * 84 // seen from behind: their right is on your right
+  return (
+    <g>
+      <rect x={-56} y={-36} width={112} height={9} rx={4.5} fill={SHIRT} stroke={SHIRT_EDGE} />
+      <circle cx={-60} cy={-31} r={6} fill={SKIN} />
+      <circle cx={60} cy={-31} r={6} fill={SKIN} />
+      <path d="M -26 -40 L 26 -40 L 21 28 L -21 28 Z" fill={SHIRT} stroke={SHIRT_EDGE} />
+      {/* back yoke seam — no tie, no buttons */}
+      <path d="M -24 -30 L 24 -30" stroke={SHIRT_EDGE} strokeWidth={2} />
+      <rect x={-21} y={28} width={42} height={6} fill={DARK} />
+      <path d="M -20 34 L -4 34 L -6 74 L -19 74 Z" fill={TROUSERS} />
+      <path d="M 20 34 L 4 34 L 6 74 L 19 74 Z" fill={TROUSERS} />
+      <ellipse cx={-13} cy={78} rx={10} ry={4.5} fill={DARK} />
+      <ellipse cx={13} cy={78} rx={10} ry={4.5} fill={DARK} />
+      {/* neck + head seen from behind: solid hair, no face */}
+      <rect x={-5} y={-48} width={10} height={9} fill={SKIN} />
+      <circle cx={0} cy={-64} r={20} fill={HAIR} />
+      <path d="M -14 -49 Q 0 -44 14 -49 L 14 -46 Q 0 -42 -14 -46 Z" fill={HAIR} />
+      <Shape shape={item.targetShape} x={targetX} y={-31} />
+      <Shape shape={item.otherShape} x={-targetX} y={-31} />
+    </g>
+  )
+}
+
+/**
+ * Profile view, drawn facing screen-right and mirrored for side-left. Only the
+ * near arm and ONE shape are visible; the far arm is hidden behind the body.
+ */
+function SideFigure({ item }: { item: SpotSideItem }): React.JSX.Element {
+  const mirror = item.facing === 'side-left'
+  return (
+    <g transform={mirror ? 'scale(-1, 1)' : undefined}>
+      {/* far leg slightly behind, then near leg */}
+      <path d="M -8 30 L 4 30 L 0 74 L -10 74 Z" fill={TROUSERS} opacity={0.75} />
+      <ellipse cx={0} cy={78} rx={9} ry={4.5} fill={DARK} opacity={0.75} />
+      <path d="M -2 30 L 10 30 L 8 74 L -3 74 Z" fill={TROUSERS} />
+      <ellipse cx={8} cy={78} rx={10} ry={4.5} fill={DARK} />
+      {/* narrow torso */}
+      <path d="M -12 -40 L 12 -40 L 10 30 L -10 30 Z" fill={SHIRT} stroke={SHIRT_EDGE} />
+      <rect x={-10} y={26} width={20} height={5} fill={DARK} />
+      {/* near arm reaching forward, hand + the single visible shape */}
+      <path
+        d="M -2 -34 L 34 -16"
+        stroke={SHIRT}
+        strokeWidth={9}
+        strokeLinecap="round"
+      />
+      <circle cx={38} cy={-14} r={6} fill={SKIN} />
+      {/* neck + head in profile: nose and hair show the facing direction */}
+      <rect x={-4} y={-48} width={9} height={9} fill={SKIN} />
+      <circle cx={0} cy={-64} r={20} fill={SKIN} />
+      {/* nose */}
+      <path d="M 18 -62 L 26 -58 L 17 -54 Z" fill={SKIN} />
+      {/* hair over the back half of the head */}
+      <path d="M 6 -83 A 20 20 0 0 0 -13 -49 L -20 -58 A 20 20 0 0 1 6 -83 Z" fill={HAIR} />
+      <path d="M 6 -83 A 20 20 0 0 1 20 -70 L 6 -76 Z" fill={HAIR} />
+      <circle cx={10} cy={-64} r={2.6} fill={DARK} />
+      <Shape shape={item.targetShape} x={62} y={-14} />
+    </g>
+  )
+}
+
+function FigureSvg({ item }: { item: SpotSideItem }): React.JSX.Element {
+  return (
+    <svg width={250} height={250} viewBox="-125 -125 250 250" aria-label="Person figure">
       <g transform={`rotate(${item.rotationDeg})`}>
-        {/* head */}
-        <circle cx={0} cy={-58} r={22} fill={head} stroke="var(--text)" strokeWidth={3} />
-        {toward ? (
-          // FRONT: eyes + smile
-          <g fill="var(--text)">
-            <circle cx={-8} cy={-62} r={3.4} />
-            <circle cx={8} cy={-62} r={3.4} />
-            <path d="M -8 -50 Q 0 -44 8 -50" stroke="var(--text)" strokeWidth={2.4} fill="none" />
-          </g>
+        {item.facing === 'toward' ? (
+          <FrontFigure item={item} />
+        ) : item.facing === 'away' ? (
+          <BackFigure item={item} />
         ) : (
-          // BACK: nape of hair, no face
-          <path
-            d="M -16 -50 Q 0 -40 16 -50"
-            stroke="var(--bg-raised)"
-            strokeWidth={5}
-            fill="none"
-            strokeLinecap="round"
-          />
+          <SideFigure item={item} />
         )}
-        {/* shoulders + torso */}
-        <path
-          d="M -30 -30 L 30 -30 L 22 30 L -22 30 Z"
-          fill="var(--bg-panel)"
-          stroke="var(--text)"
-          strokeWidth={3}
-          strokeLinejoin="round"
-        />
-        {toward ? (
-          // FRONT: open collar V + two buttons
-          <g stroke="var(--text)" strokeWidth={2.4} fill="none">
-            <path d="M -10 -30 L 0 -18 L 10 -30" />
-            <circle cx={0} cy={-6} r={2.6} fill="var(--text)" stroke="none" />
-            <circle cx={0} cy={10} r={2.6} fill="var(--text)" stroke="none" />
-          </g>
-        ) : (
-          // BACK: collar line + spine seam
-          <g stroke="var(--text)" strokeWidth={2.4} fill="none">
-            <path d="M -14 -26 L 14 -26" />
-            <path d="M 0 -26 L 0 28" />
-          </g>
-        )}
-        {/* arms out to the sides, ending in hands */}
-        <line x1={-26} y1={-24} x2={-48} y2={-2} {...line} />
-        <line x1={26} y1={-24} x2={48} y2={-2} {...line} />
-        <circle cx={-48} cy={-2} r={6} fill="var(--text)" />
-        <circle cx={48} cy={-2} r={6} fill="var(--text)" />
-        {/* legs, so orientation stays readable when rotated */}
-        <line x1={-12} y1={30} x2={-20} y2={66} {...line} />
-        <line x1={12} y1={30} x2={20} y2={66} {...line} />
-        {/* shapes just beyond each hand */}
-        <Shape shape={item.targetShape} x={targetX} y={-2} />
-        <Shape shape={item.otherShape} x={-targetX} y={-2} />
       </g>
     </svg>
   )
@@ -114,6 +167,19 @@ const SHAPE_NAMES: Record<SideShape, string> = {
   square: 'square',
   triangle: 'triangle',
   diamond: 'diamond'
+}
+
+function facingCaption(item: SpotSideItem): { text: string; accent: boolean } {
+  switch (item.facing) {
+    case 'toward':
+      return { text: '▲ This person is FACING YOU', accent: true }
+    case 'away':
+      return { text: '▼ This person has their BACK to you', accent: false }
+    case 'side-right':
+      return { text: '▶ Side view — the person faces RIGHT', accent: true }
+    case 'side-left':
+      return { text: '◀ Side view — the person faces LEFT', accent: true }
+  }
 }
 
 export function SpotTheSideView({
@@ -137,6 +203,7 @@ export function SpotTheSideView({
     ? (i: number): string | undefined =>
         i === correctIndex ? 'correct' : i === reveal.answerIndex ? 'wrong' : undefined
     : undefined
+  const caption = facingCaption(item)
 
   return (
     <div className="session">
@@ -144,20 +211,29 @@ export function SpotTheSideView({
         Item {runner.index + 1} / {runner.total}
       </div>
       <CountdownBar remainingMs={runner.remainingMs} totalMs={runner.totalMs} />
-      <div className="stimulus-box" style={{ minHeight: 260 }}>
+      <div className="stimulus-box" style={{ minHeight: 270 }}>
         <FigureSvg item={item} />
         <div
           style={{
             fontSize: '0.85rem',
             fontWeight: 600,
-            color: item.facing === 'toward' ? 'var(--accent)' : 'var(--text-dim)'
+            color: caption.accent ? 'var(--accent)' : 'var(--text-dim)'
           }}
         >
-          {item.facing === 'toward' ? '▲ This person is FACING YOU' : '▼ This person has their BACK to you'}
+          {caption.text}
         </div>
         <p className="question-text" style={{ margin: 0 }}>
-          In which of the figure&apos;s hands is the{' '}
-          <strong>{SHAPE_NAMES[item.targetShape]}</strong>?
+          {isProfile(item.facing) ? (
+            <>
+              In which hand is the person holding the{' '}
+              <strong>{SHAPE_NAMES[item.targetShape]}</strong>?
+            </>
+          ) : (
+            <>
+              In which of the figure&apos;s hands is the{' '}
+              <strong>{SHAPE_NAMES[item.targetShape]}</strong>?
+            </>
+          )}
         </p>
       </div>
       <OptionButtons

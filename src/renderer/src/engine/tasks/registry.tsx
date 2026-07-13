@@ -142,9 +142,9 @@ export const TASKS: TaskEntry[] = [
     category: 'spatial',
     shortDesc: "Left/right judgement from another person's perspective.",
     instructions: [
-      'A figure appears facing toward you or away from you (shown by its face vs. its back, and labelled under the figure), sometimes rotated.',
-      'One shape is next to each hand. Decide in which of the FIGURE’S OWN hands the asked shape is — not yours.',
-      'When the figure faces you, its right hand is on your left. Use the ← and → arrow keys or click.'
+      'A person appears facing you (face and tie visible), with their back to you (no face), or standing sideways — the pose is also written under the figure. Higher difficulties add rotation.',
+      'Facing you or away: one shape sits next to each hand — say in which of the PERSON’S OWN hands the asked shape is, not yours. When they face you, their right hand is on your left.',
+      'Sideways: you see only ONE shape, held in the near hand — their right hand when they face right, their left when they face left. Use ← / → or click.'
     ],
     generate: spotSideLogic.generate,
     View: SpotTheSideView

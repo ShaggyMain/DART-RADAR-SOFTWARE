@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { DIFFICULTIES } from '@shared/types'
-import { generate, score, screenSideOfTarget, type SpotSideItem } from './generator'
+import {
+  generate,
+  isProfile,
+  score,
+  screenSideOfTarget,
+  type SpotSideItem
+} from './generator'
 
 const base: Omit<SpotSideItem, 'facing' | 'rotationDeg' | 'correctHand'> = {
   targetShape: 'circle',
@@ -41,6 +47,27 @@ describe('screenSideOfTarget (perspective logic)', () => {
       screenSideOfTarget({ ...base, facing: 'away', rotationDeg: 270, correctHand: 'right' })
     ).toBe('top')
   })
+
+  // Profile physics: someone walking to your right shows you their RIGHT side —
+  // the near (visible) hand is their right, and the held shape is in front of
+  // them, i.e. on the side they face.
+  it('profile facing right: shape renders on screen right, held in the right hand', () => {
+    expect(
+      screenSideOfTarget({ ...base, facing: 'side-right', rotationDeg: 0, correctHand: 'right' })
+    ).toBe('right')
+  })
+
+  it('profile facing left: shape renders on screen left, held in the left hand', () => {
+    expect(
+      screenSideOfTarget({ ...base, facing: 'side-left', rotationDeg: 0, correctHand: 'left' })
+    ).toBe('left')
+  })
+
+  it('profile facing right, rotated 90° cw: shape points down', () => {
+    expect(
+      screenSideOfTarget({ ...base, facing: 'side-right', rotationDeg: 90, correctHand: 'right' })
+    ).toBe('bottom')
+  })
 })
 
 describe('spot-the-side generator', () => {
@@ -52,11 +79,28 @@ describe('spot-the-side generator', () => {
     const s = generate('cfg', d)
     for (const item of s.items) {
       if (d === 1) {
-        expect(item.facing).toBe('away')
+        expect(['toward', 'away']).toContain(item.facing)
         expect(item.rotationDeg).toBe(0)
       }
       if (d < 3) expect(item.rotationDeg).toBe(0)
       expect(item.targetShape).not.toBe(item.otherShape)
+    }
+  })
+
+  it.each(DIFFICULTIES)('difficulty %i: every allowed pose appears in a session', (d) => {
+    const s = generate('poses', d)
+    const seen = new Set(s.items.map((i) => i.facing))
+    if (d === 1) {
+      expect(seen).toEqual(new Set(['toward', 'away']))
+    } else {
+      expect(seen).toEqual(new Set(['toward', 'away', 'side-left', 'side-right']))
+    }
+  })
+
+  it('profile items hold the shape in the near hand (matches facing side)', () => {
+    const s = generate('profiles', 3)
+    for (const item of s.items.filter((i) => isProfile(i.facing))) {
+      expect(item.correctHand).toBe(item.facing === 'side-right' ? 'right' : 'left')
     }
   })
 
