@@ -207,11 +207,11 @@ export const TASKS: TaskEntry[] = [
     id: 'memorize-instruments',
     name: 'Instrument Recall',
     category: 'memory',
-    shortDesc: 'Memorize gauge readings shown for a few seconds.',
+    shortDesc: 'Memorize instrument readings shown for a few seconds.',
     instructions: [
-      'A panel of instrument dials appears for a few seconds. Memorize every reading.',
-      'The panel is then hidden and you are asked what specific gauges read.',
-      'Distractor options are neighbouring values on the same scale, so read the needles precisely.'
+      'A panel of instruments appears for a few seconds — a compass, thermometer, battery, clock, speed-limit sign and segmented gauge. Memorize every reading.',
+      'The panel is then hidden and you are asked what a specific instrument read.',
+      'Distractor options are neighbouring values on the same scale, so read each instrument precisely.'
     ],
     generate: memorizeInstrumentsLogic.generate,
     View: MemorizeInstrumentsView

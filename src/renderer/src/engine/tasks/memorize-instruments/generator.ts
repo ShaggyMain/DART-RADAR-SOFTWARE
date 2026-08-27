@@ -9,31 +9,52 @@ import type {
 } from '@shared/types'
 
 /**
- * Memorize Instruments — visual short-term memory. A panel of dial gauges
- * is shown briefly, then hidden; recall queried readings from options.
+ * Instrument Recall — visual short-term memory. A panel of instruments is
+ * shown briefly, then hidden; recall queried readings from options.
+ *
+ * Each instrument is a different *kind* of display (compass, thermometer,
+ * battery, clock, speed-limit sign, segmented gauge) so the panel exercises
+ * reading several visual formats, not one dial repeated. All artwork is drawn
+ * from scratch in the view — generic instrument shapes, no third-party assets.
  */
-export interface GaugeSpec {
+export type InstrumentKind =
+  | 'compass'
+  | 'thermometer'
+  | 'battery'
+  | 'clock'
+  | 'speedlimit'
+  | 'gauge'
+
+export interface InstrumentSpec {
+  kind: InstrumentKind
+  /** Label shown under the instrument and used to query it. */
   name: string
-  unit: string
+  /**
+   * Inclusive value range and granularity. The value is a plain reading for
+   * scaled instruments (°C, km/h), a segment count for battery/gauge, a
+   * compass point index (0 = N, clockwise) for the compass, and minutes since
+   * midnight for the clock.
+   */
   min: number
   max: number
   step: number
+  unit: string
 }
 
-export interface Gauge extends GaugeSpec {
+export interface Instrument extends InstrumentSpec {
   value: number
 }
 
 export interface InstrumentQuery {
-  /** Index into the panel's gauges. */
-  gaugeIndex: number
+  /** Index into the panel's instruments. */
+  instrumentIndex: number
   options: string[]
   correctIndex: number
   timeLimitMs: number
 }
 
 export interface InstrumentsItem {
-  gauges: Gauge[]
+  instruments: Instrument[]
   exposureMs: number
   queries: InstrumentQuery[]
 }
@@ -43,65 +64,107 @@ export interface InstrumentsScenario extends ScenarioBase {
   items: InstrumentsItem[]
 }
 
-/** Original gauge set — generic flight-style dials, no third-party layouts. */
-export const GAUGE_POOL: readonly GaugeSpec[] = [
-  { name: 'SPD', unit: 'kt', min: 0, max: 400, step: 20 },
-  { name: 'ALT', unit: 'x1000 ft', min: 0, max: 40, step: 2 },
-  { name: 'HDG', unit: '°', min: 0, max: 360, step: 20 },
-  { name: 'FUEL', unit: '%', min: 0, max: 100, step: 5 },
-  { name: 'TEMP', unit: '°C', min: -40, max: 40, step: 5 },
-  { name: 'PWR', unit: '%', min: 0, max: 100, step: 5 }
+/** Compass points, clockwise from north — index order used by the value. */
+export const COMPASS_POINTS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'] as const
+
+/** Segment counts for the two segmented instruments. */
+export const BATTERY_SEGMENTS = 6
+export const GAUGE_SEGMENTS = 7
+
+/** Original instrument set — generic displays, no third-party layouts. */
+export const INSTRUMENT_POOL: readonly InstrumentSpec[] = [
+  { kind: 'compass', name: 'COMPASS', min: 0, max: COMPASS_POINTS.length - 1, step: 1, unit: '' },
+  { kind: 'thermometer', name: 'THERMOMETER', min: -20, max: 40, step: 5, unit: '°C' },
+  { kind: 'battery', name: 'BATTERY', min: 0, max: BATTERY_SEGMENTS, step: 1, unit: 'bars' },
+  // clock: minutes since midnight on a 12-hour face, half-hour steps
+  { kind: 'clock', name: 'CLOCK', min: 60, max: 720, step: 30, unit: '' },
+  { kind: 'speedlimit', name: 'SPEEDLIMIT', min: 20, max: 140, step: 10, unit: 'km/h' },
+  { kind: 'gauge', name: 'GAUGE', min: 0, max: GAUGE_SEGMENTS, step: 1, unit: 'segments' }
 ]
 
 interface Config {
   panels: number
-  gauges: number
+  instruments: number
   exposureMs: number
   queriesPerPanel: number
   queryTimeLimitMs: number
 }
 
 const CONFIG: Record<Difficulty, Config> = {
-  1: { panels: 6, gauges: 3, exposureMs: 8000, queriesPerPanel: 1, queryTimeLimitMs: 9000 },
-  2: { panels: 6, gauges: 4, exposureMs: 7000, queriesPerPanel: 2, queryTimeLimitMs: 9000 },
-  3: { panels: 6, gauges: 4, exposureMs: 6000, queriesPerPanel: 2, queryTimeLimitMs: 8000 },
-  4: { panels: 6, gauges: 5, exposureMs: 5000, queriesPerPanel: 3, queryTimeLimitMs: 8000 },
-  5: { panels: 6, gauges: 6, exposureMs: 4500, queriesPerPanel: 3, queryTimeLimitMs: 7000 }
+  1: { panels: 6, instruments: 3, exposureMs: 8000, queriesPerPanel: 1, queryTimeLimitMs: 9000 },
+  2: { panels: 6, instruments: 4, exposureMs: 7000, queriesPerPanel: 2, queryTimeLimitMs: 9000 },
+  3: { panels: 6, instruments: 4, exposureMs: 6000, queriesPerPanel: 2, queryTimeLimitMs: 8000 },
+  4: { panels: 6, instruments: 5, exposureMs: 5000, queriesPerPanel: 3, queryTimeLimitMs: 8000 },
+  5: { panels: 6, instruments: 6, exposureMs: 4500, queriesPerPanel: 3, queryTimeLimitMs: 7000 }
 }
 
-export function formatReading(gauge: GaugeSpec, value: number): string {
-  return `${value} ${gauge.unit}`
+export function formatReading(spec: InstrumentSpec, value: number): string {
+  switch (spec.kind) {
+    case 'compass':
+      return COMPASS_POINTS[((value % COMPASS_POINTS.length) + COMPASS_POINTS.length) % COMPASS_POINTS.length]
+    case 'clock': {
+      const h = Math.floor(value / 60)
+      const m = value % 60
+      return `${h}:${String(m).padStart(2, '0')}`
+    }
+    case 'battery':
+      return `${value} / ${BATTERY_SEGMENTS}`
+    case 'gauge':
+      return `${value} / ${GAUGE_SEGMENTS}`
+    default:
+      return `${value} ${spec.unit}`
+  }
 }
 
-function snappedValue(rng: Rng, spec: GaugeSpec): number {
+/**
+ * A value `steps` away from `value`, or null when that leaves the scale. The
+ * compass wraps (one step back from N is NW); every other instrument is bounded.
+ */
+function offsetValue(spec: InstrumentSpec, value: number, steps: number): number | null {
+  const v = value + steps * spec.step
+  if (spec.kind === 'compass') {
+    const n = COMPASS_POINTS.length
+    return ((v % n) + n) % n
+  }
+  return v < spec.min || v > spec.max ? null : v
+}
+
+function snappedValue(rng: Rng, spec: InstrumentSpec): number {
+  // A compass reads all the way round; the others avoid the exact scale ends
+  // so a needle/column is always clearly inside its range.
+  if (spec.kind === 'compass') return rng.int(spec.min, spec.max)
   const steps = Math.floor((spec.max - spec.min) / spec.step)
-  // avoid the exact ends so the needle is always clearly inside the scale
   return spec.min + rng.int(1, steps - 1) * spec.step
 }
 
-function makeQuery(rng: Rng, gauges: Gauge[], gaugeIndex: number, timeLimitMs: number): InstrumentQuery {
-  const gauge = gauges[gaugeIndex]
-  const values = new Set<number>([gauge.value])
+function makeQuery(
+  rng: Rng,
+  instruments: Instrument[],
+  instrumentIndex: number,
+  timeLimitMs: number
+): InstrumentQuery {
+  const inst = instruments[instrumentIndex]
+  const values = new Set<number>([inst.value])
   let guard = 0
   while (values.size < 4 && ++guard < 200) {
     const offsetSteps = rng.int(1, 3) * (rng.bool() ? 1 : -1)
-    const v = gauge.value + offsetSteps * gauge.step
-    if (v < gauge.min || v > gauge.max) continue
-    values.add(v)
+    const v = offsetValue(inst, inst.value, offsetSteps)
+    if (v !== null) values.add(v)
   }
   // fallback: extend past the neighbours if the scale is too cramped
   let k = 4
   while (values.size < 4) {
-    for (const v of [gauge.value + k * gauge.step, gauge.value - k * gauge.step]) {
-      if (values.size < 4 && v >= gauge.min && v <= gauge.max) values.add(v)
+    for (const s of [k, -k]) {
+      const v = offsetValue(inst, inst.value, s)
+      if (values.size < 4 && v !== null) values.add(v)
     }
     if (++k > 50) throw new Error('memorize-instruments: cannot build 4 options')
   }
-  const options = rng.shuffle([...values].map((v) => formatReading(gauge, v)))
+  const options = rng.shuffle([...values].map((v) => formatReading(inst, v)))
   return {
-    gaugeIndex,
+    instrumentIndex,
     options,
-    correctIndex: options.indexOf(formatReading(gauge, gauge.value)),
+    correctIndex: options.indexOf(formatReading(inst, inst.value)),
     timeLimitMs
   }
 }
@@ -111,16 +174,19 @@ export function generate(seed: string, difficulty: Difficulty): InstrumentsScena
   const cfg = CONFIG[difficulty]
   const items: InstrumentsItem[] = []
   for (let p = 0; p < cfg.panels; p++) {
-    const specs = rng.sample(GAUGE_POOL, cfg.gauges)
-    const gauges: Gauge[] = specs.map((spec) => ({ ...spec, value: snappedValue(rng, spec) }))
+    const specs = rng.sample(INSTRUMENT_POOL, cfg.instruments)
+    const instruments: Instrument[] = specs.map((spec) => ({
+      ...spec,
+      value: snappedValue(rng, spec)
+    }))
     const queryIndices = rng.sample(
-      Array.from({ length: gauges.length }, (_, i) => i),
+      Array.from({ length: instruments.length }, (_, i) => i),
       cfg.queriesPerPanel
     )
     items.push({
-      gauges,
+      instruments,
       exposureMs: cfg.exposureMs,
-      queries: queryIndices.map((gi) => makeQuery(rng, gauges, gi, cfg.queryTimeLimitMs))
+      queries: queryIndices.map((gi) => makeQuery(rng, instruments, gi, cfg.queryTimeLimitMs))
     })
   }
   return { taskId: 'memorize-instruments', seed, difficulty, items }

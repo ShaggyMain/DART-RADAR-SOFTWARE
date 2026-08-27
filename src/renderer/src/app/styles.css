@@ -243,6 +243,32 @@ h2 {
   margin-top: 6px;
 }
 
+/* Instrument Recall panel: one card per instrument, label underneath */
+.instrument-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+}
+
+.instrument-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.instrument-label {
+  color: var(--text-dim);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+
 /* Multi Attention on-screen input buttons */
 .ma-btn {
   margin-top: auto;
