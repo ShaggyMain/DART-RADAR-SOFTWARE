@@ -11,11 +11,15 @@ files:
 
 # Update feed: reads published GitHub Releases of this repo. Releases must be
 # public for the in-app updater to fetch them without a runtime token.
+#
+# Uploads go into a DRAFT release; the workflow publishes it only once every
+# asset is attached. A published-but-empty release would briefly become
+# "latest" and break every update check until latest.yml finished uploading.
 publish:
   provider: github
   owner: ShaggyMain
   repo: DART-RADAR-SOFTWARE
-  releaseType: release
+  releaseType: draft
 
 # node:sqlite is built into Electron — no native modules to rebuild/unpack.
 npmRebuild: false

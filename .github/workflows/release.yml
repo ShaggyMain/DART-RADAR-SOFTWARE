@@ -40,6 +40,10 @@ jobs:
       # current commit, and pre-create ONE release. electron-builder then finds
       # that release and uploads all assets into it instead of creating its own.
       # (Pushes using the automatic GITHUB_TOKEN don't re-trigger this workflow.)
+      #
+      # The release is created as a DRAFT: drafts are excluded from
+      # releases/latest and releases.atom, so an in-progress build can never
+      # become "latest" without latest.yml. The final step publishes it.
       - name: Prepare a single clean release (manual runs)
         if: github.event_name == 'workflow_dispatch'
         env:
@@ -58,10 +62,20 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -f $tag
           git push -f origin $tag
-          gh release create $tag --title $v --notes "VectorMind $v" --target $env:GITHUB_SHA
+          gh release create $tag --draft --title $v --notes "VectorMind $v" --target $env:GITHUB_SHA
           exit 0
 
-      - name: Build and publish installer
+      - name: Build and upload installer
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx electron-vite build && npx electron-builder --win nsis --publish always
+
+      # Only now, with the installer, blockmap and latest.yml all attached, does
+      # the release become visible to the in-app updater.
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        run: |
+          $v = node -p "require('./package.json').version"
+          gh release edit "v$v" --draft=false --latest

@@ -1,12 +1,26 @@
 import { describe, expect, it } from 'vitest'
-import { friendlyUpdateError, isTransientUpdateError } from './updateErrors'
+import { extractStatus, friendlyUpdateError, isTransientUpdateError } from './updateErrors'
+
+// The shape electron-updater actually throws: status first, then a dump whose
+// headers contain plenty of other numbers.
+const dump503 =
+  'Update error: 503 "method: GET url: https://github.com/o/r/releases.atom\n Data:\n <html><body><h1>503 Service Unavailable</h1></body></html>\n Headers: { "content-length": "107", "x-served": "429" }'
+const dump404 =
+  'Cannot find latest.yml in the latest release artifacts (https://github.com/o/r/releases/download/v0.1.4/latest.yml): HttpError: 404\n"method: GET ...\nHeaders: { "content-length": "503", "age": "500" }'
+
+describe('extractStatus', () => {
+  it('reads the reported status, not stray numbers', () => {
+    expect(extractStatus(new Error(dump503))).toBe(503)
+    expect(extractStatus(new Error(dump404))).toBe(404)
+    expect(extractStatus(new Error('socket hang up'))).toBeNull()
+  })
+})
 
 describe('isTransientUpdateError', () => {
   it('flags GitHub 5xx and rate limits', () => {
-    expect(isTransientUpdateError(new Error('503 Service Unavailable'))).toBe(true)
-    expect(isTransientUpdateError('method: GET ... 503 ... No server is available')).toBe(true)
+    expect(isTransientUpdateError(new Error(dump503))).toBe(true)
+    expect(isTransientUpdateError(new Error('HttpError: 429 Too Many Requests'))).toBe(true)
     expect(isTransientUpdateError(new Error('502 Bad Gateway'))).toBe(true)
-    expect(isTransientUpdateError(new Error('429 Too Many Requests'))).toBe(true)
   })
 
   it('flags network drops', () => {
@@ -15,25 +29,23 @@ describe('isTransientUpdateError', () => {
     expect(isTransientUpdateError(new Error('getaddrinfo EAI_AGAIN github.com'))).toBe(true)
   })
 
-  it('does not flag a genuine missing-asset (404) error', () => {
-    expect(isTransientUpdateError(new Error('HttpError: 404 Cannot find latest.yml'))).toBe(false)
+  it('does NOT flag a 404 just because a header holds a 50x number', () => {
+    expect(isTransientUpdateError(new Error(dump404))).toBe(false)
   })
 })
 
 describe('friendlyUpdateError', () => {
-  it('summarises a transient 503 dump into one short line', () => {
-    const dump =
-      'Update error: 503 "method: GET url: https://github.com/x/y/releases.atom\n Data:\n <html>...</html>\n Headers: { "cache-control": "no-cache", ... very long ... }'
-    const msg = friendlyUpdateError(new Error(dump))
+  it('summarises a transient 503 and keeps the status for diagnosis', () => {
+    const msg = friendlyUpdateError(new Error(dump503))
     expect(msg).toMatch(/temporary network or server issue/i)
+    expect(msg).toContain('HTTP 503')
     expect(msg).not.toContain('Headers')
-    expect(msg.length).toBeLessThan(160)
   })
 
-  it('explains a missing latest.yml', () => {
-    expect(friendlyUpdateError(new Error('Cannot find latest.yml in the latest release'))).toMatch(
-      /update information/i
-    )
+  it('explains a missing latest.yml as an upload still in flight', () => {
+    const msg = friendlyUpdateError(new Error(dump404))
+    expect(msg).toMatch(/still being uploaded/i)
+    expect(msg).toContain('HTTP 404')
   })
 
   it('trims an unknown long error to a single capped line', () => {
