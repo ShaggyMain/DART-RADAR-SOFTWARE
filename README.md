@@ -126,6 +126,8 @@ function over a seeded PRNG. The same seed always reproduces the identical sessi
 | Radar Control — Gates | manual vectoring + efficiency + radio checks | ✅ M5 |
 | Strip Management | conflict detection from strip data | ✅ M5 |
 | English Listening | listening comprehension (template passages + TTS) | ✅ M6 |
+| Shape Recall | recognition memory across an interference gap | ✅ |
+| Category Sort | rule application with pair and message overrides | ✅ |
 
 ## Roadmap
 

@@ -34,7 +34,14 @@ export interface ExamBlueprint {
  */
 export const EXAM_POOLS: Record<'attention' | 'memory' | 'spatial' | 'simulation', TaskId[]> = {
   attention: ['conflict-scan', 'vigilance', 'divided-attention', 'multi-attention'],
-  memory: ['rule-application', 'memorize-instruments', 'memorize-pictograms', 'big-numbers'],
+  memory: [
+    'rule-application',
+    'memorize-instruments',
+    'memorize-pictograms',
+    'big-numbers',
+    'shape-recall',
+    'category-sort'
+  ],
   spatial: ['matching-figure', 'spot-the-side', 'coordinate-system', 'cube-folding'],
   simulation: ['radar-dart', 'multipass', 'radar-control', 'strip-management']
 }

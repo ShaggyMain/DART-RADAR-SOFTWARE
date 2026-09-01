@@ -27,6 +27,10 @@ import { cubeFoldingLogic } from './cube-folding/generator'
 import { CubeFoldingView } from './cube-folding/View'
 import { matchingFigureLogic } from './matching-figure/generator'
 import { MatchingFigureView } from './matching-figure/View'
+import { categorySortLogic } from './category-sort/generator'
+import { CategorySortView } from './category-sort/View'
+import { shapeRecallLogic } from './shape-recall/generator'
+import { ShapeRecallView } from './shape-recall/View'
 import { memorizeInstrumentsLogic } from './memorize-instruments/generator'
 import { MemorizeInstrumentsView } from './memorize-instruments/View'
 import { memorizePictogramsLogic } from './memorize-pictograms/generator'
@@ -202,6 +206,37 @@ export const TASKS: TaskEntry[] = [
     extraLabels: { postChangeAccuracy: 'Accuracy after rule change' },
     generate: ruleApplicationLogic.generate,
     View: RuleApplicationView
+  }),
+  entry({
+    id: 'shape-recall',
+    name: 'Shape Recall',
+    category: 'memory',
+    shortDesc: 'Remember shapes, do sums, then pick the shapes out again.',
+    instructions: [
+      'Shapes appear one after another — remember them. Each figure is built from an outer frame, an optional diagonal, an optional straight line and one or two small circles.',
+      'A few simple calculations follow. They are there to stop you rehearsing the shapes, but they are scored too, so answer them properly.',
+      'Finally a grid appears: click every shape you saw earlier, then press Confirm. Distractors differ by just one detail, so compare carefully. This repeats over several rounds.'
+    ],
+    extraLabels: {
+      recallAccuracy: 'Shape accuracy',
+      mathAccuracy: 'Calculation accuracy',
+      falseAlarms: 'Wrongly picked shapes'
+    },
+    generate: shapeRecallLogic.generate,
+    View: ShapeRecallView
+  }),
+  entry({
+    id: 'category-sort',
+    name: 'Category Sort',
+    category: 'memory',
+    shortDesc: 'Sort objects into categories under changing rules.',
+    instructions: [
+      'One object appears in the Item box. Put it in the right category using the boxes below: a COLOURED shape goes by its colour, an OUTLINE shape goes by its shape, and a NUMBER goes by the range it falls into.',
+      'Sometimes a second object appears in the Pair item box. If it is identical to the item, answer “Pair” — that beats every other rule.',
+      'A message may also appear, e.g. “Classify green objects as blue”. It overrides the normal rule for the objects it names, but never beats an identical pair.'
+    ],
+    generate: categorySortLogic.generate,
+    View: CategorySortView
   }),
   entry({
     id: 'memorize-instruments',

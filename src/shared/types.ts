@@ -35,6 +35,9 @@ export type TaskId =
   | 'strip-management'
   // M6
   | 'english-listening'
+  // FEAST-style additions
+  | 'shape-recall'
+  | 'category-sort'
 
 /** Common envelope for every generated scenario. */
 export interface ScenarioBase {

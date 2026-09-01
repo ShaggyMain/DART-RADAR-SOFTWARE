@@ -243,6 +243,83 @@ h2 {
   margin-top: 6px;
 }
 
+/* Category Sort: item / pair boxes and the message line */
+.sort-message {
+  min-height: 1.4em;
+  margin: 6px 0 10px;
+  font-weight: 700;
+  color: var(--warn);
+}
+
+.sort-boxes {
+  display: flex;
+  gap: 18px;
+  justify-content: center;
+}
+
+.sort-box {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px 14px;
+  min-width: 150px;
+}
+
+.sort-box-title {
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+}
+
+.sort-box-art {
+  height: 118px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Shape Recall: recognition grid */
+.recall-grid {
+  display: grid;
+  /* the stimulus box is a column flex, so claim the full width or the grid
+     collapses to a single column */
+  width: 100%;
+  grid-template-columns: repeat(auto-fit, minmax(104px, 116px));
+  gap: 12px;
+  justify-content: center;
+}
+
+.recall-cell {
+  background: var(--bg-panel);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 6px;
+  cursor: pointer;
+  line-height: 0;
+  transition: border-color 0.1s, background 0.1s;
+}
+
+.recall-cell:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.recall-cell.selected {
+  border-color: var(--accent);
+  background: var(--bg-raised);
+  box-shadow: 0 0 0 2px var(--accent) inset;
+}
+
+.recall-cell.target {
+  border-color: var(--good);
+  box-shadow: 0 0 0 2px var(--good) inset;
+}
+
+.recall-cell.wrong {
+  border-color: var(--bad);
+  box-shadow: 0 0 0 2px var(--bad) inset;
+}
+
 /* Instrument Recall panel: one card per instrument, label underneath */
 .instrument-panel {
   display: flex;
